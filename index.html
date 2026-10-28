@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Wubby's World — Playable Browser Edition</title>
+<style>
+.preview-banner {background:#fff4db;border:2px solid #d3b77b;padding:15px 17px;margin:0 0 15px;border-radius:14px;color:#694f30;font-size:14px;line-height:1.5}
+.preview-cover {position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,#dbefe4,#eff6d9);color:#456b4d;text-align:center;gap:12px;pointer-events:none}
+.preview-cover .static-scene {font-size:68px;line-height:1.4;letter-spacing:10px}
+.preview-cover strong{font-size:20px}
+.preview-cover p{font-size:13px;max-width:280px;margin:0;line-height:1.6}
+.game-ready .preview-banner, .game-ready .preview-cover {display:none}
+.game-ready .running-indicator{display:inline-flex}
+.running-indicator{display:none;background:#e5f4dd;color:#47744b;border-radius:12px;padding:7px 10px;font-size:11px;font-weight:bold}
+
+:root { --ink:#30483d; --muted:#788a79; --line:#e1e8d9; --cream:#fffdf6; --leaf:#417d60; --shadow:0 12px 32px rgba(61,83,59,.10); }
+* { box-sizing:border-box; }
+body { margin:0; background:linear-gradient(140deg,#faf8ed,#eff5ed 70%,#eff6f4); font-family:ui-rounded,'Trebuchet MS',system-ui,-apple-system,Arial,sans-serif; color:var(--ink); min-height:100vh; }
+button { font:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+button:focus-visible {outline:3px solid #90cf9e;outline-offset:2px}
+.app {max-width:1320px; margin:auto; padding:19px 20px 28px; }
+.header { display:flex; align-items:center; justify-content:space-between; gap:18px; margin:0 0 14px; }
+.brand {display:flex;align-items:center;gap:12px;}
+.brand-mark {width:56px;height:56px;border:1px solid #d2e3cd;border-radius:19px;background:#e6f2d9;display:grid;place-items:center;font-size:32px;transform:rotate(-5deg);}
+h1 {font-family:Georgia,serif;font-size:30px;letter-spacing:-.8px;line-height:1.1;margin:0;color:#2c4935;}
+.subtitle {font-size:12px;color:#748875;margin:5px 0 0;font-weight:700;letter-spacing:.15px}
+.status {display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+.pill {background:#ffffffcc;border:1px solid var(--line);padding:9px 12px;border-radius:40px;font-size:12px;font-weight:750;white-space:nowrap}
+.pill strong{color:#337a55}
+.layout {display:grid;grid-template-columns:minmax(0,1fr) 326px;gap:16px;align-items:start}
+.world-column {min-width:0}
+.world-wrap {overflow:hidden; position:relative;border:1px solid #c7ddcf;border-radius:23px;box-shadow:var(--shadow);background:#def0e9;height:min(68vh,625px);min-height:380px;touch-action:none;}
+#world {width:100%;height:100%;display:block; cursor:grab}
+#world.pressing {cursor:grabbing}
+.world-title{position:absolute;left:16px;top:14px;background:#ffffffc9;border:1px solid #dbe7d8;backdrop-filter:blur(7px);border-radius:15px;padding:9px 12px;pointer-events:none;display:flex;align-items:center;gap:10px}
+.world-title .face{width:32px;height:32px;background:#f3e0b2;border-radius:50%;display:grid;place-items:center;font-size:22px}
+.world-title small{display:block;color:#7d9080;font-size:10px;font-weight:700;margin-bottom:2px}
+.world-title b{font-size:13px}
+.world-hint{position:absolute;left:14px;bottom:13px;max-width:calc(100% - 125px);background:#fffcf2dd;border:1px solid #f1e7c9;border-radius:12px;padding:8px 11px;color:#698272;font-size:11px;line-height:1.35;pointer-events:none}
+.zoom {position:absolute;bottom:13px;right:13px;display:flex;gap:5px;z-index:3}
+.zoom button{width:34px;height:34px;background:#fffef6e8;border:1px solid #dae7d8;border-radius:11px;color:#446b52;font-weight:900;font-size:18px}
+#toast {position:absolute;left:50%;top:86px;transform:translateX(-50%) translateY(-8px);background:#2d694bee;color:white;padding:10px 16px;border-radius:24px;font-size:12px;font-weight:700;box-shadow:0 8px 18px #305b4833;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap;z-index:4;max-width:90%;overflow:hidden;text-overflow:ellipsis}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.panel {background:var(--cream);border:1px solid #e5e9d8;border-radius:19px;box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+.panel h2{font-size:15px;font-weight:850;margin:0 0 4px}
+.panel .sub{font-size:11px;color:#82917f;line-height:1.45;margin:0 0 12px}
+.tile-bank {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile-option {border:2px solid #e6e7d8;outline:none;border-radius:15px;background:#fcfbf3;padding:9px 2px 10px;min-height:101px;transition:border-color .12s,transform .12s,background .12s;color:#516651;display:flex;flex-direction:column;align-items:center;gap:6px}
+.tile-option:hover{transform:translateY(-2px)}
+.tile-option.selected{border-color:#71ad75;background:#eaf6df;box-shadow:0 0 0 3px #c6e9b778}
+.tile-option .emoji{font-size:33px;line-height:1.3;filter:drop-shadow(0 3px 1px #dde8d5)}
+.tile-option .name{font-weight:850;font-size:11px}
+.tile-count {display:flex;align-items:center;gap:8px;margin-top:12px;font-size:11px;font-weight:700;color:#788879}
+.meter-track {height:7px;border-radius:9px;flex:1;background:#e7eee0;overflow:hidden}
+.meter-fill {height:100%;background:#7bbd8d;border-radius:9px;transition:width .25s}
+.sky-controls {display:flex;flex-wrap:wrap;gap:7px}
+.control-btn {flex:1;min-width:78px;border:1px solid #dfebdc;border-radius:11px;background:#f1f7ea;padding:9px 4px;font-size:12px;font-weight:800;color:#4f705d}
+.control-btn:hover{background:#e5f1dd}
+.control-btn.primary{background:#dcebd5;border-color:#bfd9b9}
+.control-btn:disabled{opacity:.5;cursor:not-allowed}
+.wubby-panel {display:flex;gap:12px;align-items:center}
+.wubby-avatar {background:linear-gradient(160deg,#f8edd4,#e8eccd);font-size:37px;border-radius:16px;width:60px;height:60px;display:grid;place-items:center;flex:none}
+.wubby-info{flex:1;min-width:0}.wubby-info b{font-size:15px}
+.mood-label{font-size:11px;margin:5px 0 7px;color:#7c8c7c}
+.bars{display:grid;grid-template-columns:48px minmax(0,1fr) 29px;gap:5px 7px;align-items:center;margin-top:10px;font-size:10px;font-weight:750;color:#839081}
+.bars .meter-fill{background:#8dc1b4}.bars .food .meter-fill{background:#e9b872}.bars .rest .meter-fill{background:#9aadd9}
+.diary{max-height:210px;overflow:auto;scrollbar-color:#c8d9c5 transparent;padding-right:3px}
+.entry{border-left:3px solid #e4eddb;padding:2px 3px 7px 10px;margin:0 0 9px}.entry:first-child{border-left-color:#83ba8d}
+.entry small{font-size:10px;color:#a2a99d;font-weight:750}
+.entry p{font-size:12px;margin:4px 0 0;line-height:1.5;color:#566d5b}
+.below{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.tip{color:#879a8a;font-size:12px;line-height:1.5}
+.linkbtn{background:none;border:0;padding:5px 0;color:#7c9183;text-decoration:underline;font-size:11px}
+.help{border:1px solid #e3eaca;border-radius:17px;background:#f6fae8;padding:13px 14px;font-size:12px;line-height:1.65;color:#667966;margin-top:12px}
+.help b{color:#3f7654}
+.mobile-stats{display:none}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sidebar .panel{margin:0}.world-wrap{height:min(63vh,520px)}.app{padding:13px}.header{margin-bottom:12px}}
+@media(max-width:550px){h1{font-size:25px}.brand-mark{width:48px;height:48px;border-radius:14px}.subtitle{font-size:11px}.header{align-items:flex-start}.status{gap:5px}.status .pill{font-size:10px;padding:7px 8px}.status .pill:nth-child(2){display:none}.layout{gap:10px}.world-wrap{height:min(43vh,370px);min-height:285px;border-radius:18px}.sidebar{grid-template-columns:1fr 1fr;gap:10px}.sidebar .panel{padding:12px}.sidebar .tile-panel{grid-column:span 2}.sidebar .diary-panel{grid-column:span 2}.tile-option{min-height:90px}.panel h2{font-size:14px}.world-hint{font-size:10px}.control-btn{min-width:unset;flex-basis:45%;padding:9px 3px}.wubby-panel{gap:7px}.wubby-avatar{font-size:27px;width:43px;height:45px}.wubby-info b{font-size:13px}.mood-label{font-size:10px}.bars{grid-template-columns:34px 1fr 23px;gap:5px;font-size:9px}.sidebar .power-panel .sub{margin-bottom:9px}}
+@media(max-width:360px){.world-wrap{min-height:265px}.status .pill:first-child{display:none}.world-wrap{min-height:305px}.control-btn{font-size:11px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="brand"><div class="brand-mark" aria-hidden="true">🏡</div><div><h1>Wubby's World</h1><p class="subtitle">His world. Your creation.</p></div></div>
+    <div class="status"><div class="pill">☀️ Day <strong id="day">1</strong></div><div class="pill">🗺️ <strong id="tileTotal">5</strong> / 225 tiles</div><div class="pill">✨ <strong id="discoveries">1</strong> discovered</div></div>
+  </header>
+  <div class="preview-banner" role="status" id="previewBanner"><strong>Browser required:</strong> This is an interactive JavaScript game. If you can still see this notice, your current file preview isn't running the game. Download the HTML file, then open it from your phone's Downloads folder using <strong>Chrome</strong> or another full web browser. Don't play it inside the ChatGPT file preview.</div>
+  <div class="layout">
+    <main class="world-column">
+      <div class="world-wrap" id="worldWrap">
+        <canvas id="world" aria-label="Interactive isometric map of Wubby's world. Choose a tile below then tap a space beside the existing land."></canvas>
+        <div class="preview-cover" id="previewCover"><div class="static-scene">🌳 🏠 🐰</div><strong>Wubby is ready to explore!</strong><p>To see the moving map and play, open this downloaded HTML file in your browser.</p></div>
+        <div class="world-title"><div class="face">🐰</div><div><small>WUBBY IS CURRENTLY</small><b id="activity">Looking around...</b></div></div>
+        <div class="world-hint" id="hint">Choose a tile below, then tap a glowing space next to the land. Drag to look around.</div>
+        <div class="zoom"><button id="zoomOut" title="Zoom out">−</button><button id="zoomIn" title="Zoom in">+</button><button id="recenter" title="Return to Wubby">⌂</button></div>
+        <div id="toast" role="status"></div>
+      </div>
+    </main>
+    <aside class="sidebar">
+      <section class="panel tile-panel"><h2>Build Wubby's world <span class="running-indicator">● Game running</span></h2><p class="sub">Pick one, then place it on the map. Replacing a beloved spot may upset him!</p><div class="tile-bank" id="bank"></div><div class="tile-count"><span>World filled</span><div class="meter-track"><div class="meter-fill" id="worldProgress" style="width:2%"></div></div><span id="worldPercent">2%</span></div></section>
+      <section class="panel power-panel"><h2>Little miracles</h2><p class="sub">Wubby has no idea you're looking after him.</p><div class="sky-controls"><button class="control-btn" id="rain">🌧️ Rain</button><button class="control-btn" id="sun">☀️ Sunshine</button><button class="control-btn primary" id="apple">🍎 Leave an apple</button><button class="control-btn" id="follow">🔍 Find Wubby</button></div></section>
+      <section class="panel status-panel"><h2>Life of Wubby</h2><div class="wubby-panel"><div class="wubby-avatar">🐰</div><div class="wubby-info"><b id="mood">Feeling curious</b><div class="mood-label" id="moodReason">A whole world to discover</div><div class="meter-track"><div class="meter-fill" id="happyFill" style="width:80%"></div></div></div></div><div class="bars"><span>Food</span><div class="meter-track food"><div class="meter-fill" id="foodFill" style="width:75%"></div></div><span id="foodText">75%</span><span>Energy</span><div class="meter-track rest"><div class="meter-fill" id="restFill" style="width:85%"></div></div><span id="restText">85%</span></div></section>
+      <section class="panel diary-panel"><h2>📖 Wubby's diary</h2><p class="sub">Thoughts from an ordinary little life.</p><div class="diary" id="diary"></div></section>
+    </aside>
+  </div>
+  <div class="postscript">
+      <div class="below"><div class="tip">🌿 No deadlines, no game over. Wubby takes care of himself and discovers the world at his own pace.</div><button id="reset" class="linkbtn">Start a new world</button></div>
+      <div class="help"><b>How to play:</b> Pick one of the three landscape tiles. Place it next to an existing tile, or replace an old one. The choice refills automatically. Wubby will explore, remember places he enjoys, eat when he's hungry, and return home to sleep. Try rain, sunshine, or leaving him an apple. Your progress saves automatically on this device.</div>
+  </div>
+</div>
+<script>
+(()=>{'use strict';
+const N=15, HOME=7, TILE_W=112, TILE_H=57, STORE='wubbys-world-2026-v1';
+const C={grass:'#a8d489',meadow:'#a8dc8e',forest:'#7cba79',orchard:'#b4d68e',pond:'#86c8b6',flowers:'#bfd898',garden:'#c0d99c',hill:'#c5d7aa',mushroom:'#b0cd8d'};
+const LABEL={grass:'Meadow',meadow:'Soft meadow',forest:'Pine forest',orchard:'Apple orchard',pond:'Little pond',flowers:'Flower field',garden:'Veggie garden',hill:'Gentle hill',mushroom:'Mushroom grove'};
+const EMOJI={grass:'🌾',meadow:'🌿',forest:'🌲',orchard:'🍎',pond:'💧',flowers:'🌸',garden:'🥕',hill:'⛰️',mushroom:'🍄'};
+const TILESET=['meadow','forest','orchard','pond','flowers','garden','hill','mushroom'];
+const $=id=>document.getElementById(id), canvas=$('world'),wrap=$('worldWrap'),ctx=canvas.getContext('2d');
+let width=800,height=570,dpr=1,last=performance.now(),elapsed=0,toaster=0,drag=null,hover=null,activeWeather='sun',weatherUntil=0,rainDrops=[];
+const rand=(a,b)=>a+Math.random()*(b-a),ri=(a,b)=>Math.floor(rand(a,b+1)),choose=a=>a[Math.floor(Math.random()*a.length)];
+const clamp=(a,min,max)=>Math.max(min,Math.min(max,a));
+const key=(r,c)=>r*N+c; const pos=k=>({r:Math.floor(k/N),c:k%N});
+const neighbors=(r,c)=>[[r-1,c],[r+1,c],[r,c-1],[r,c+1]].filter(([r,c])=>r>=0&&r<N&&c>=0&&c<N);
+const home=key(HOME,HOME);
+function fresh(){let board=Array(N*N).fill(null);board[home]='home';board[key(7,6)]='grass';board[key(6,7)]='grass';board[key(7,8)]='grass';board[key(8,7)]='grass';return {board,bank:['orchard','flowers','pond'],selected:0,placed:0,day:1,daySeconds:25, happiness:80,food:77,energy:85,visited:{[home]:1},favorite:null,affinity:{},journal:[{day:1,text:'My little house is so cozy. I wonder what lies beyond the garden?'},{day:1,text:'A lovely morning for a walk.'}],wubby:{r:7,c:7,x:7,y:7,from:home,to:home,prog:1,state:'thinking',stateTime:2,speech:'',speechFor:0,goal:null,route:[],lastMemory:''},apples:0,sky:'sun',weatherTimer:0,discoveries:1};}
+let game=fresh();
+try{const saved=JSON.parse(localStorage.getItem(STORE));if(saved&&saved.board?.length===225&&saved.bank?.length===3&&saved.wubby)game={...fresh(),...saved};}catch(e){}
+let zoom=1.08,panX=0,panY=35;
+function save(){try{localStorage.setItem(STORE,JSON.stringify(game));}catch(e){}}
+function toast(t){let e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(toaster);toaster=setTimeout(()=>e.classList.remove('show'),2150);}
+function log(text){if(game.journal[0]?.text===text)return;game.journal.unshift({day:game.day,text});game.journal=game.journal.slice(0,55);renderDiary();save();}
+function speak(s,time=3){game.wubby.speech=s;game.wubby.speechFor=time;}
+function renderDiary(){$('diary').innerHTML=game.journal.slice(0,14).map(e=>`<div class="entry"><small>DAY ${e.day}</small><p>${escapeHTML(e.text)}</p></div>`).join('');}
+function escapeHTML(s){return String(s).replace(/[&<>\"]/g,t=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[t]));}
+function renderBank(){$('bank').innerHTML=game.bank.map((t,i)=>`<button type="button" class="tile-option ${game.selected===i?'selected':''}" data-i="${i}" aria-pressed="${game.selected===i}"><span class="emoji">${EMOJI[t]}</span><span class="name">${LABEL[t]}</span></button>`).join('');$('bank').querySelectorAll('button').forEach(b=>b.onclick=()=>{game.selected=Number(b.dataset.i);renderBank();});}
+function ui(){let count=game.board.filter(Boolean).length; $('day').textContent=game.day;$('tileTotal').textContent=count;$('discoveries').textContent=game.discoveries;$('worldProgress').style.width=(100*count/225)+'%';$('worldPercent').textContent=Math.round(count*100/225)+'%';$('foodFill').style.width=game.food+'%';$('foodText').textContent=Math.round(game.food)+'%';$('restFill').style.width=game.energy+'%';$('restText').textContent=Math.round(game.energy)+'%';$('happyFill').style.width=game.happiness+'%';$('mood').textContent=game.happiness>85?'Feeling wonderful':game.happiness>64?'Feeling content':game.happiness>43?'A little unsettled':'Feeling gloomy';$('moodReason').textContent=game.happiness>74?'Life has its little pleasures':game.happiness>43?'Making the best of things':'Missing something special';$('activity').textContent=({'thinking':'Looking around','walking':'Exploring the neighborhood','enjoy':'Enjoying the scenery','eating':'Having a little snack','sleeping':'Asleep in his cottage','collect':'Gathering something tasty','shelter':'Keeping dry','apple':'Investigating an apple'})[game.wubby.state]||'Out and about';}
+function available(r,c){const v=game.board[key(r,c)];if(v)return true;return neighbors(r,c).some(([rr,cc])=>!!game.board[key(rr,cc)]);}
+function canBuild(r,c){if(r<0||c<0||r>=N||c>=N)return false;const k=key(r,c);if(k===home)return false;if(Math.round(game.wubby.x)===c&&Math.round(game.wubby.y)===r)return false;return available(r,c);}
+function pickTile(){const count=game.placed;const pool=count<8?['meadow','flowers','orchard','forest','pond','garden']:TILESET;return choose(pool);}
+function placement(r,c){if(!canBuild(r,c)){toast(game.board[key(r,c)]==='home'?"Wubby's home stays right here.":'Place beside the existing world.');return;}let k=key(r,c),old=game.board[k],tile=game.bank[game.selected];if(old===tile){toast('That landscape is already here.');return;}
+ const like=game.favorite;if(old&&game.visited[k]>=2){if(old===like){game.happiness=clamp(game.happiness-18,20,100);speak('My favorite spot...',3);log(`Something feels wrong. The ${LABEL[old].toLowerCase()} I loved has disappeared.`);}else {game.happiness=clamp(game.happiness-3,20,100);}}
+ game.board[k]=tile;game.placed++;let dist=Math.abs(r-HOME)+Math.abs(c-HOME);
+ if(tile===like&&dist<=3){game.happiness=clamp(game.happiness+9,0,100);log(`There's a ${LABEL[tile].toLowerCase()} close to home! That makes me happy.`);}
+ game.bank[game.selected]=pickTile(); if(game.placed===1){toast('The world grows! Wubby may discover it soon.');}else toast(old?'A little corner of this world has changed.':'A new part of Wubby’s world appeared!');
+ if(game.placed===3)log('There seems to be more to explore every day. How exciting!');
+ if(game.placed===10)log('This place keeps surprising me. I wonder how far it goes.');
+ if(game.wubby.state==='walking'&&!game.board[game.wubby.to]){game.wubby.to=home;game.wubby.route=[];}
+ renderBank();ui();save();}
+function view(r,c){return {x:width/2+panX+(c-r)*TILE_W*.5*zoom,y:height*.515+panY+(c+r-HOME*2)*TILE_H*.5*zoom};}
+function inv(x,y){const a=(x-width/2-panX)/(TILE_W*.5*zoom),b=(y-height*.515-panY)/(TILE_H*.5*zoom);return {c:Math.round((a+b+HOME*2)/2),r:Math.round((b+HOME*2-a)/2)};}
+function resize(){const rect=wrap.getBoundingClientRect();width=rect.width;height=rect.height;dpr=Math.min(2,window.devicePixelRatio||1);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
+if(typeof ResizeObserver!=='undefined')new ResizeObserver(resize).observe(wrap);
+else window.addEventListener('resize',resize);
+resize();
+function poly(pts,fill,stroke=null,lw=1){ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(...pts[i]);ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();}}
+function ellipse(x,y,rx,ry,fill,stroke=null,lw=1){ctx.beginPath();ctx.ellipse(x,y,Math.max(.1,rx),Math.max(.1,ry),0,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();}}
+function line(x1,y1,x2,y2,color,lw=1){ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.lineCap='round';ctx.stroke();}
+const colorSeed=n=>{let h=Math.sin(n*12.9898)*43758.5453;return h-Math.floor(h);};
+function grassBlades(x,y,s,n=3){for(let i=0;i<n;i++){let dx=(colorSeed(i*31+x*.13+y*.7)-.5)*22*s,dy=(colorSeed(i*71+y*.19)-.5)*8*s;line(x+dx,y+dy,x+dx-2*s,y+dy-4*s,'#78ad69',1.25*s);line(x+dx,y+dy,x+dx+2.5*s,y+dy-4*s,'#7fac5b',1*s);}}
+function drawTree(x,y,s=1,fruit=false,bloom=false){ellipse(x,y+3*s,13*s,5*s,'#4d8b694b');poly([[x-4*s,y],[x-3*s,y-29*s],[x+4*s,y-29*s],[x+5*s,y]],'#946e50');ellipse(x,y-29*s,16*s,19*s,bloom?'#ecb5bf':'#5c9b68');ellipse(x-10*s,y-28*s,13*s,15*s,bloom?'#f6cdd0':'#78b16b');ellipse(x+10*s,y-29*s,12*s,16*s,bloom?'#e8a9b5':'#83b97a');ellipse(x-2*s,y-38*s,15*s,14*s,bloom?'#f1b9c4':'#8fc781');ellipse(x-9*s,y-38*s,5*s,3*s,'#f4f2db77');if(fruit){for(const [a,b] of [[-9,-28],[6,-35],[12,-24],[-1,-45]]){ellipse(x+a*s,y+b*s,3*s,3*s,'#e65848');ellipse(x+(a+1)*s,y+(b-2)*s,1.5*s,1*s,'#94c66c');}}}
+function drawPine(x,y,s=1){ellipse(x,y+2*s,13*s,4*s,'#366a5c33');poly([[x-3*s,y],[x-3*s,y-20*s],[x+3*s,y-20*s],[x+4*s,y]],'#806b4d');poly([[x,y-55*s],[x-21*s,y-20*s],[x+21*s,y-20*s]],'#47896e');poly([[x,y-43*s],[x-19*s,y-11*s],[x+19*s,y-11*s]],'#377b66');poly([[x,y-34*s],[x-20*s,y-7*s],[x+20*s,y-7*s]],'#32745f');line(x-4*s,y-44*s,x-9*s,y-31*s,'#91c6a1',1.3*s)}
+function drawFlower(x,y,s=1,col='#fce5e7'){for(let i=0;i<5;i++){let a=i*Math.PI*2/5;ellipse(x+Math.cos(a)*3.5*s,y+Math.sin(a)*3.5*s,3*s,2.6*s,col);}ellipse(x,y,2.3*s,2.2*s,'#f5cb58');}
+function scene(type,x,y,s,seed){
+  const wob=colorSeed(seed*32)*4-2; ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+  if(type==='home'){
+    ellipse(0,6,32,10,'#6f996344'); poly([[-11,6],[0,13],[15,7],[4,0]],'#d4b989');
+    // foundations, warm stone walls, doorway, a curved moss roof
+    poly([[-23,-4],[0,6],[25,-5],[25,-33],[0,-43],[-23,-32]],'#e8d6a8');poly([[0,6],[25,-5],[25,-33],[0,-21]],'#d3b68d');
+    poly([[-31,-33],[-5,-56],[17,-49],[31,-30],[0,-20]],'#6f9d57');poly([[-31,-33],[-5,-56],[0,-20],[-23,-12]],'#8cb468');
+    poly([[-5,-56],[17,-49],[31,-30],[0,-20]],'#5f8e58');
+    poly([[-10,-30],[0,-20],[10,-25],[8,-39],[-1,-45]],'#8da65c');
+    ellipse(-5,-49,14,5,'#a5cb77');line(-24,-31,-2,-17,'#608653',2.4);
+    poly([[-2,5],[11,1],[11,-20],[2,-27],[-2,-20]],'#845e4d');poly([[0,5],[10,1],[10,-19],[0,-23]],'#ae8059');ellipse(7,-11,1.5,1.5,'#f4da78');
+    poly([[14,-24],[23,-28],[23,-39],[14,-36]],'#f4db86','#b28f57',1.2);
+    poly([[-17,-15],[-10,-18],[-10,-31],[-17,-29]],'#f6d687','#a99370',1);
+    poly([[12,-51],[18,-54],[18,-66],[12,-63]],'#bc9a74');ellipse(15,-66,8,4,'#b8baac77');
+    drawFlower(-29,2,.85,'#fff3c9');drawFlower(26,6,.9,'#ffcad6');
+  } else if(type==='grass'||type==='meadow'){
+    for(let i=0;i<6;i++){let xx=(colorSeed(seed*15+i*3.9)-.5)*65, yy=(colorSeed(seed*7+i*5.2)-.5)*22;grassBlades(xx,yy,.65,2)}
+    if(type==='meadow')for(let i=0;i<5;i++)drawFlower((colorSeed(seed*9+i*11)-.5)*61,(colorSeed(seed*4+i*13)-.5)*23,.55,['#f8cad6','#fbf3bc','#ffffff'][Math.floor(colorSeed(seed*13+i*17)*3)]);
+  }else if(type==='forest'){
+    drawPine(-15,-2,.9);drawPine(15,1,.8);drawPine(3,-4,.62);
+  }else if(type==='orchard'){
+    drawTree(-13,-1,.8,true);drawTree(19,3,.64,true);ellipse(3,4,3,2.3,'#e9684b');
+  }else if(type==='pond'){
+    ellipse(0,0,36,16,'#6dad9b');ellipse(-1,-2,31,13,'#75c9d5');ellipse(-12,-5,12,3.2,'#b9e8e8a0');ellipse(17,2,6,3,'#5fa68b');drawFlower(19,-1,.5,'#f2def3');line(-23,1,-15,2,'#d8faf3',1.2);line(-5,6,7,5,'#d8faf3',1.2);
+  }else if(type==='flowers'){
+    for(let i=0;i<16;i++){let xx=(colorSeed(seed*9+i*3.2)-.5)*76,yy=(colorSeed(seed*6+i*5.3)-.5)*28;drawFlower(xx,yy,.55+colorSeed(i+seed)*.28,['#f6c6d8','#fff3ca','#e9daf7','#f6d89e'][i%4]);}
+  }else if(type==='garden'){
+    poly([[-35,-2],[-7,-14],[17,-4],[-10,8]],'#ac835e');poly([[2,7],[27,-7],[42,-1],[13,12]],'#a17b54');for(let i=0;i<4;i++){drawFlower(-25+i*9,-5-i*1.1,.45,'#efa66c');drawFlower(10+i*7,2-i*1.2,.43,'#f0aa5b');}poly([[-8,3],[6,8],[4,11],[-11,6]],'#84a859');
+  }else if(type==='hill'){
+    poly([[-35,9],[-4,-35],[18,5]],'#95aaa0');poly([[-4,-35],[36,11],[18,5]],'#798d86');poly([[-14,-13],[-4,-35],[5,-19],[-2,-18]],'#edf2e1');grassBlades(-30,8,.6,3);drawFlower(26,7,.6);
+  }else if(type==='mushroom'){
+    drawTree(-14,-3,.68,false,false);for(let i=0;i<5;i++){let xx=(colorSeed(i*9+seed)-.5)*56,yy=(colorSeed(i*15+seed)-.5)*18+4;poly([[xx-2,yy],[xx-2,yy-6],[xx+2,yy-6],[xx+2,yy]],'#f0e3c1');ellipse(xx,yy-7,6,3.5,['#d96d59','#e9af6c','#ca795e'][i%3]);ellipse(xx-2,yy-8,1.4,.8,'#f8e9d1');}
+  }
+  ctx.restore();
+}
+function diamond(x,y,s,fill,highlight=false){let w=TILE_W*zoom/2,h=TILE_H*zoom/2,depth=7*zoom;let pts=[[x,y-h],[x+w,y],[x,y+h],[x-w,y]];poly([[x-w,y],[x,y+h],[x,y+h+depth],[x-w,y+depth]],'#799c6c');poly([[x,y+h],[x+w,y],[x+w,y+depth],[x,y+h+depth]],'#5e956c');poly(pts,fill,'#5a93686b',.9*zoom);if(highlight)poly(pts,null,'#f7f1a8',2.6*zoom);}
+function drawPlaceholder(r,c){let {x,y}=view(r,c),w=TILE_W*.5*zoom,h=TILE_H*.5*zoom;poly([[x,y-h],[x+w,y],[x,y+h],[x-w,y]],'#d7e8db55','#aed4bf77',.8);}
+function drawTile(r,c,type,highlight){let {x,y}=view(r,c);diamond(x,y,zoom,C[type]||'#b8d39a',highlight);scene(type,x,y,zoom,key(r,c)+1);if(!game.visited[key(r,c)]&&type!=='home'){
+ // undiscovered places are visible to the player, but unknown to Wubby
+ }
+}
+function drawWubby(time){let k=game.wubby,{x,y}=view(k.y,k.x);let s=zoom*.82,walking=k.state==='walking',bob=walking?Math.abs(Math.sin(time*10))*2:Math.sin(time*2)*.7;
+ ctx.save();ctx.translate(x,y+1-bob*s);ctx.scale(s,s);
+ ellipse(0,1,12,4,'#45695550');
+ if(walking){line(-5,-1,-6+Math.sin(time*11)*4,6,'#977044',4);line(5,-1,5-Math.sin(time*11)*4,6,'#977044',4);}
+ else {ellipse(-5,5,4,3,'#926f4c');ellipse(5,5,4,3,'#926f4c');}
+ // body, backpack, floppy ears, face
+ ellipse(10,-17,7,13,'#a8744c');ellipse(0,-17,12,14,'#ca945d');ellipse(0,-16,8,9,'#efe1bf');
+ ellipse(-19,-41,7.5,18,'#b98962');ellipse(19,-41,7.5,18,'#b98962');ellipse(-19,-41,4.6,14,'#e7aeab');ellipse(19,-41,4.6,14,'#e7aeab');
+ ellipse(0,-41,22,20,'#d7a66e');ellipse(-4,-44,17,16,'#f8e9c9');ellipse(13,-34,5,5,'#f8e9c9');
+ ellipse(-6,-43,2.8,3.6,'#273a35');ellipse(9,-43,2.8,3.6,'#273a35');ellipse(-7,-44,1.1,1.3,'white');ellipse(8,-44,1.1,1.3,'white');
+ ellipse(1,-36,3.3,2.2,'#7d5b52');line(-1,-33,1,-32,'#805a54',.85);line(1,-32,3,-33,'#805a54',.85);
+ ellipse(-12,-35,4.3,2.3,'#d8858060');ellipse(15,-35,4.3,2.3,'#d8858060');
+ poly([[-9,-26],[7,-25],[10,-21],[-4,-18],[-12,-21]],'#72aa7f');poly([[6,-22],[13,-21],[10,-7],[5,-10]],'#5b8d6b');
+ ctx.restore();
+ if(k.speechFor>0 && k.speech){const size=12;ctx.font='bold 12px Trebuchet MS, sans-serif';let tw=Math.min(180,ctx.measureText(k.speech).width+22),yy=y-70*zoom;ctx.fillStyle='#fffef0f0';ctx.strokeStyle='#dbe2ca';ctx.lineWidth=1;ctx.beginPath();if(ctx.roundRect){ctx.roundRect(x-tw/2,yy-24,tw,25,9);}else{ctx.rect(x-tw/2,yy-24,tw,25);}ctx.fill();ctx.stroke();poly([[x-5,yy+1],[x+5,yy+1],[x,yy+7]],'#fffef0');ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#607b63';ctx.fillText(k.speech,x,yy-11,tw-8);}
+}
+function draw(time){ctx.clearRect(0,0,width,height);
+ let bg=ctx.createLinearGradient(0,0,0,height);bg.addColorStop(0,'#d4eee7');bg.addColorStop(1,'#eaf3da');ctx.fillStyle=bg;ctx.fillRect(0,0,width,height);
+ // ambient sparkles floating beyond the miniature world
+ for(let i=0;i<31;i++){let x=((colorSeed(i*54)*width+time*(i%3+1)*2)%(width+25)),y=colorSeed(i*99)*height;ellipse(x,y,1.5,1.5,'#ffffff8c');}
+ const visible=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){let {x,y}=view(r,c);if(x<-110||x>width+110||y<-110||y>height+110)continue;const type=game.board[key(r,c)];if(type)visible.push([r,c,type]);else if(available(r,c))drawPlaceholder(r,c);}
+ visible.sort((a,b)=>(a[0]+a[1])-(b[0]+b[1]));for(const [r,c,t] of visible)drawTile(r,c,t,hover?.r===r&&hover?.c===c);
+ if(hover&&canBuild(hover.r,hover.c)){let {x,y}=view(hover.r,hover.c),t=game.bank[game.selected];ctx.globalAlpha=.53;diamond(x,y,zoom,'#e4f4b5',true);scene(t,x,y,zoom,key(hover.r,hover.c)+1);ctx.globalAlpha=1;}
+ // small apple gift appears in the vicinity of Wubby
+ if(game.apples){let {x,y}=view(game.wubby.y,game.wubby.x);ellipse(x+19*zoom,y+3*zoom,4.2*zoom,4*zoom,'#de5d48');line(x+20*zoom,y-.5*zoom,x+21*zoom,y-5*zoom,'#688f56',1.5*zoom);}
+ drawWubby(time);
+ if(game.sky==='rain'){
+   ctx.fillStyle='#6985a11e';ctx.fillRect(0,0,width,height);for(let d of rainDrops){line(d.x,d.y,d.x-4,d.y+13,'#a5d2dabc',1.3);d.y+=d.speed;if(d.y>height){d.y=-20;d.x=rand(0,width)}}
+ }
+ let shade=game.daySeconds>88?Math.sin((game.daySeconds-88)/32*Math.PI)*.15:0;if(shade){ctx.fillStyle=`rgba(60,71,111,${shade})`;ctx.fillRect(0,0,width,height)}
+}
+function shortest(start,target){if(start===target)return[];let prev=new Map([[start,-1]]),q=[start];for(let i=0;i<q.length;i++){let k=q[i],{r,c}=pos(k);for(let [rr,cc] of neighbors(r,c)){let nk=key(rr,cc);if(!game.board[nk]||prev.has(nk))continue;prev.set(nk,k);q.push(nk);if(nk===target){let path=[],p=nk;while(p!==start){path.unshift(p);p=prev.get(p);}return path;}}}return[];}
+function decide(){let k=game.wubby,where=key(Math.round(k.y),Math.round(k.x));if(!game.board[where])where=home;
+ if(game.energy<24){head(home,'sleeping');return;}
+ if(game.food<35){let foods=game.board.map((t,i)=>(['orchard','garden','mushroom'].includes(t)?i:-1)).filter(i=>i>=0);if(foods.length){foods.sort((a,b)=>shortest(where,a).length-shortest(where,b).length);head(foods[0],'collect');}else head(home,'eating');return;}
+ if(game.sky==='rain'&&Math.random()<.55){head(home,'shelter');return;}
+ let possible=game.board.map((t,i)=>t?i:-1).filter(i=>i>=0&&i!==where);
+ if(!possible.length){rest('thinking',2);return;}
+ let unexplored=possible.filter(i=>!game.visited[i]);let favorite=possible.filter(i=>game.board[i]===game.favorite);
+ let target=unexplored.length&&Math.random()<.62?choose(unexplored):favorite.length&&Math.random()<.42?choose(favorite):choose(possible);
+ head(target,'enjoy');
+}
+function head(target,reason){let k=game.wubby,here=key(Math.round(k.y),Math.round(k.x)),route=shortest(here,target);k.goal=target;k.intent=reason;k.route=route;if(!route.length){if(here===target)arrive();else rest('thinking',1.4);return;}step();}
+function step(){let k=game.wubby;k.from=key(Math.round(k.y),Math.round(k.x));k.to=k.route.shift();k.prog=0;k.state='walking';}
+function rest(state,time){let k=game.wubby;k.state=state;k.stateTime=time;}
+function arrive(){let k=game.wubby,tile=game.board[k.goal],p=k.goal;if(k.intent==='sleeping'){
+   rest('sleeping',8);speak('Zzz...',4);if(Math.random()<.3)log('Nothing beats my own little bed after a long walk.');return;
+ }if(k.intent==='eating'){
+   game.food=clamp(game.food+52,0,100);rest('eating',3.1);speak('Mmm, breakfast!',3);log('A nice snack at home. I always keep something in the cupboard.');return;
+ }if(k.intent==='collect'){
+   game.food=clamp(game.food+43,0,100);rest('collect',3.2);speak(tile==='orchard'?'Fresh apples!':'Something tasty!',3);if(Math.random()<.28)log(tile==='orchard'?'Picked a sweet apple from the orchard. Delicious!':'Found a little treat growing nearby.');return;
+ }if(k.intent==='shelter'){rest('shelter',4);speak('Nice and dry.',3);return;}
+ rest('enjoy',rand(1.7,4.1));let visits=game.visited[p]||0;game.visited[p]=visits+1;
+ if(!visits){game.discoveries++;let intros={home:'Home, sweet home.',grass:'Some soft grass to sit on.',meadow:'What a peaceful little meadow!',forest:'A shady grove of pine trees. How lovely!',orchard:'Apples! I wonder if they taste good.',pond:'A little pond. The water sparkles.',flowers:'Look at all these beautiful flowers!',garden:'A garden full of tasty things!',hill:'From up here, everything looks so small.',mushroom:'Mushrooms! I should remember this place.'};speak(intros[tile]?.slice(0,26)||'What a discovery!',3);log(intros[tile]||'I found a new place!');game.happiness=clamp(game.happiness+1.7,10,100);}
+ else if(visits>=3&&tile!=='home'){
+  game.affinity[tile]=(game.affinity[tile]||0)+1;
+  if(!game.favorite||game.affinity[tile]>game.affinity[game.favorite]+2){game.favorite=tile;log(`I think ${LABEL[tile].toLowerCase()} might be my favorite place of all.`);speak('I love it here!',3);game.happiness=clamp(game.happiness+4,0,100);}
+ }
+ if(tile==='pond'){speak('So peaceful...',2.3);game.happiness=clamp(game.happiness+1,0,100);}
+ if(tile==='flowers'){game.happiness=clamp(game.happiness+1,0,100)}
+}
+function update(dt){let k=game.wubby;game.daySeconds+=dt; if(game.daySeconds>=120){game.daySeconds-=120;game.day++;if(game.day%3===0)log('Another day in this curious little world. I wonder what I might find next.');save();}
+ if(game.sky==='rain'){game.weatherTimer-=dt;if(game.weatherTimer<=0){game.sky='sun';toast('The clouds drifted away.');}}
+ k.speechFor=Math.max(0,k.speechFor-dt);
+ game.food=clamp(game.food-dt*(k.state==='sleeping'?.045:.19),0,100);
+ if(k.state!=='sleeping')game.energy=clamp(game.energy-dt*(k.state==='walking'?.24:.16),0,100);
+ if(k.state==='walking'){
+  if(!game.board[k.to]){k.route=[];k.x=Math.round(k.x);k.y=Math.round(k.y);rest('thinking',1);}
+  else {let from=pos(k.from),to=pos(k.to);k.prog+=dt/(.75/Math.max(.75,zoom));let p=clamp(k.prog,0,1);k.x=from.c+(to.c-from.c)*p;k.y=from.r+(to.r-from.r)*p;if(k.prog>=1){k.x=to.c;k.y=to.r;if(k.route.length)step();else arrive();}}
+ }else{ k.stateTime-=dt;if(k.state==='sleeping'){game.energy=clamp(game.energy+dt*9,0,100);}if(k.stateTime<=0){if(k.state==='sleeping')game.energy=Math.max(game.energy,90);if(game.apples>0){game.apples--;game.food=clamp(game.food+22,0,100);speak('An apple! Lucky me.',3);rest('apple',2.5);log('Found an apple outside. A lovely surprise!');}
+ else decide();}}
+ if(game.happiness<70)game.happiness=clamp(game.happiness+dt*.025,0,100);
+ elapsed+=dt;if(elapsed>=.35){elapsed=0;ui();}
+}
+function frame(now){let dt=clamp((now-last)/1000,0,.08);last=now;update(dt);draw(now/1000);requestAnimationFrame(frame);}
+canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY,px:panX,py:panY,moved:false};canvas.classList.add('pressing');});
+canvas.addEventListener('pointermove',e=>{let rect=canvas.getBoundingClientRect();if(drag){let dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>8)drag.moved=true;if(drag.moved){panX=clamp(drag.px+dx,-1100,1100);panY=clamp(drag.py+dy,-900,900);hover=null;} }else{let p=inv(e.clientX-rect.left,e.clientY-rect.top);hover=p.r>=0&&p.c>=0&&p.r<N&&p.c<N?p:null;}});
+canvas.addEventListener('pointerup',e=>{canvas.classList.remove('pressing');if(!drag)return;const wasMove=drag.moved;drag=null;if(wasMove)return;let rect=canvas.getBoundingClientRect(),p=inv(e.clientX-rect.left,e.clientY-rect.top);placement(p.r,p.c);});
+canvas.addEventListener('pointercancel',()=>{drag=null;canvas.classList.remove('pressing');});
+canvas.addEventListener('pointerleave',()=>{if(!drag)hover=null;});
+canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=clamp(zoom+(e.deltaY<0?.09:-.09),.43,1.7);},{passive:false});
+$('zoomOut').onclick=()=>zoom=clamp(zoom-.17,.43,1.7);$('zoomIn').onclick=()=>zoom=clamp(zoom+.17,.43,1.7);
+function recenter(){panX=0;panY=35;zoom=1.08;}
+$('recenter').onclick=recenter;$('follow').onclick=()=>{let k=game.wubby;const p=view(k.y,k.x);panX+=width/2-p.x;panY+=height*.49-p.y;toast('Here is Wubby!');};
+$('rain').onclick=()=>{game.sky='rain';game.weatherTimer=19;rainDrops=Array.from({length:90},()=>({x:rand(0,width),y:rand(0,height),speed:rand(3,10)}));toast('A gentle shower begins.');if(game.wubby.state==='enjoy')speak('Rain! Better find a roof.',3);log('A sudden shower! The trees must be enjoying it.');save();};
+$('sun').onclick=()=>{game.sky='sun';game.weatherTimer=0;toast('The sun comes out.');speak('What lovely sunshine.',2.5);save();};
+$('apple').onclick=()=>{game.apples=Math.min(4,game.apples+1);toast('A little apple has appeared near Wubby.');save();};
+$('reset').onclick=()=>{if(!confirm('Start a new world? Your current land and Wubby’s diary will be replaced.'))return;game=fresh();recenter();renderBank();renderDiary();ui();save();toast('A fresh little world begins.');};
+renderBank();renderDiary();ui();document.body.classList.add('game-ready');rainDrops=Array.from({length:90},()=>({x:rand(0,width),y:rand(0,height),speed:rand(3,10)}));requestAnimationFrame(frame);
+setInterval(save,8000);
+})();
+</script>
+</body>
+</html>
