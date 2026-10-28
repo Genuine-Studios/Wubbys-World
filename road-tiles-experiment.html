@@ -1403,6 +1403,7 @@ function decide(){
 }
 function head(target,reason){let k=game.wubby,here=key(Math.round(k.y),Math.round(k.x)),route=shortest(here,target);k.goal=target;k.intent=reason;k.route=route;if(!route.length){if(here===target)arrive();else rest('thinking',1.4);return;}step();}
 function step(){let k=game.wubby;k.from=key(Math.round(k.y),Math.round(k.x));k.to=k.route.shift();
+ if(k.to==null||!game.board[k.to]||!allowsMove(k.from,k.to)){k.route=[];rest('thinking',1);return;}
  const a=pos(k.from),b=pos(k.to),dx=(b.c-a.c)-(b.r-a.r),dy=(b.c-a.c)+(b.r-a.r);
  k.facing=facingFromScreen(dx,dy*.5);k.lookFacing=null;k.lookTime=0;
  k.prog=0;k.state='walking';}
@@ -1447,7 +1448,7 @@ function update(dt){let k=game.wubby;game.daySeconds+=dt; if(game.daySeconds>=12
  game.food=clamp(game.food-dt*(k.state==='sleeping'?.045:.19),0,100);
  if(k.state!=='sleeping')game.energy=clamp(game.energy-dt*(k.state==='walking'?.24:.16),0,100);
  if(k.state==='walking'){
-  if(!game.board[k.to]){k.route=[];k.x=Math.round(k.x);k.y=Math.round(k.y);rest('thinking',1);}
+  if(!game.board[k.to]||!allowsMove(k.from,k.to)){k.route=[];k.x=Math.round(k.x);k.y=Math.round(k.y);rest('thinking',1);}
   else {let from=pos(k.from),to=pos(k.to);k.prog+=dt/(.75/Math.max(.75,zoom));let p=clamp(k.prog,0,1);k.x=from.c+(to.c-from.c)*p;k.y=from.r+(to.r-from.r)*p;if(k.prog>=1){k.x=to.c;k.y=to.r;if(k.route.length)step();else arrive();}}
  }else{ k.stateTime-=dt;if(k.state==='sleeping'){game.energy=clamp(game.energy+dt*9,0,100);}if(k.stateTime<=0){if(k.state==='sleeping')game.energy=Math.max(game.energy,90);if(game.apples>0){game.apples--;game.food=clamp(game.food+22,0,100);speak('An apple! Lucky me.',3);rest('apple',2.5);log('Found an apple outside. A lovely surprise!');}
  else decide();}}
@@ -1495,7 +1496,14 @@ $('shareGameButton').onclick=()=>{
  else if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(()=>toast(language==='nl'?'Link gekopieerd!':'Link copied!')).catch(()=>window.prompt(language==='nl'?'Kopieer de link:':'Copy this link:',url));}
  else window.prompt(language==='nl'?'Kopieer de link:':'Copy this link:',url);
 };
-initRoads();renderBank();renderDiary();ui();setLanguage();renderActivities();updateUnifiedModeLabel();document.body.classList.add('game-ready');rainDrops=Array.from({length:90},()=>({x:rand(0,width),y:rand(0,height),speed:rand(3,10)}));requestAnimationFrame(frame);
+initRoads();
+ // Old saved walking routes may cross intersections that are no longer connected.
+ if(game.wubby.state==='walking'){
+  game.wubby.x=Math.round(game.wubby.x);game.wubby.y=Math.round(game.wubby.y);
+  game.wubby.from=key(game.wubby.y,game.wubby.x);game.wubby.to=game.wubby.from;
+  game.wubby.route=[];game.wubby.state='thinking';game.wubby.stateTime=1;
+ }
+ renderBank();renderDiary();ui();setLanguage();renderActivities();updateUnifiedModeLabel();document.body.classList.add('game-ready');rainDrops=Array.from({length:90},()=>({x:rand(0,width),y:rand(0,height),speed:rand(3,10)}));requestAnimationFrame(frame);
 setInterval(save,8000);
 })();
 </script>
