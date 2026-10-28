@@ -317,6 +317,7 @@ body{background:radial-gradient(circle at 8% 2%,#fff1d3 0,#f7f4e5 30%,#e7f1e5 10
   </div>
 
 </div>
+<script src="wubby-dialogue-v1.js?v=1"></script>
 <script>
 (()=>{'use strict';
 const N=31, HOME=15, TILE_W=112, TILE_H=57, STORE='wubbys-world-nature-points-v1', SOURCE_STORE='wubbys-world-road-selection-v1', LIVE_STORE='wubbys-world-real-tile-art-test-v1';
@@ -521,6 +522,53 @@ function toast(t){let e=$('toast');e.textContent=tr(t);e.classList.add('show');c
 function log(text){if(game.journal[0]?.text===text)return;game.journal.unshift({day:game.day,text});game.journal=game.journal.slice(0,55);renderDiary();save();}
 function speak(s,time=3){game.wubby.speech=s;game.wubby.speechFor=time;}
 
+ // Bilingual, rotating speech decks with persistent recent-memory.
+ const WUBBY_DIALOGUE=window.WUBBY_DIALOGUE_PACK||{first:{},tile:{},activity:{},rare:[],conditions:{}};
+ for(const pair of Object.values(WUBBY_DIALOGUE.first||{}))NL_TEXT[pair[0]]=pair[1];
+ for(const section of [WUBBY_DIALOGUE.tile,WUBBY_DIALOGUE.activity,WUBBY_DIALOGUE.conditions]){
+  for(const lines of Object.values(section||{}))for(const [en,nl] of lines)NL_TEXT[en]=nl;
+ }
+ for(const r of WUBBY_DIALOGUE.rare||[])NL_TEXT[r.line[0]]=r.line[1];
+ game.dialogueDecks=game.dialogueDecks&&typeof game.dialogueDecks==='object'?game.dialogueDecks:{};
+ game.recentSpeech=Array.isArray(game.recentSpeech)?game.recentSpeech.slice(-18):[];
+ function sayFromDeck(category,lines){
+  if(!Array.isArray(lines)||!lines.length)return false;
+  const old=Array.isArray(game.dialogueDecks[category])?game.dialogueDecks[category]:[];
+  let available=lines.map((_,i)=>i).filter(i=>!old.includes(i)),reset=!available.length;
+  if(reset)available=lines.map((_,i)=>i);
+  const fresh=available.filter(i=>!game.recentSpeech.includes(lines[i][0]));
+  if(fresh.length)available=fresh;
+  const i=choose(available);
+  if(i==null)return false;
+  game.dialogueDecks[category]=[...(reset?[]:old),i];
+  const en=lines[i][0];
+  speak(en,Math.min(7,Math.max(3.6,2.8+tr(en).length*.055)));
+  game.recentSpeech.push(en);game.recentSpeech=game.recentSpeech.slice(-18);
+  return true;
+ }
+ function maybeRareThought(){
+  if(game.day<4||Math.random()>=.045)return false;
+  return sayFromDeck('rare-thought',(WUBBY_DIALOGUE.rare||[]).filter(r=>game.day>=r.day).map(r=>r.line));
+ }
+ function maybeMoodRemark(){
+  if(Math.random()>.14)return false;
+  const kind=game.sky==='rain'?'rain':game.food<55?'hungry':game.energy<52?'tired':
+   game.happiness<45?'sad':game.happiness>82?'happy':'sun';
+  return sayFromDeck('mood:'+kind,(WUBBY_DIALOGUE.conditions||{})[kind]);
+ }
+ function speakAtTile(tile,kind='tile'){
+  return sayFromDeck(kind+':'+tile,(WUBBY_DIALOGUE.tile||{})[tile]);
+ }
+ function speakForActivity(id,tile){
+  const a=WUBBY_ACTIVITIES[id],extra=(WUBBY_DIALOGUE.activity||{})[id]||[];
+  // Asking where a path leads is for a first discovery, not every return visit.
+  const original=id==='walk'?[]:[[a.say,NL_TEXT[a.say]||a.sayNl||a.say]];
+  if(maybeRareThought()||maybeMoodRemark())return;
+  if(Math.random()<.30&&speakAtTile(tile))return;
+  sayFromDeck('activity:'+id,[...original,...extra]);
+ }
+
+
 function renderActivities(){
  const count=Object.keys(game.activityCounts).filter(id=>game.activityCounts[id]>0&&WUBBY_ACTIVITIES[id]).length;
  $('activityHeading').textContent=language==='nl'?'🌱 Wubby’s belevenissen':'🌱 Wubby’s adventures';
@@ -544,7 +592,7 @@ function recordActivity(id,place){
  if(total===1||total===5)log(a.diary);
  renderActivities();save();
 }
-function performActivity(tile,place){
+function performActivity(tile,place,holdSpeech=false){
  const options=ACTIVITIES_BY_TILE[tile]||[];
  if(options.length===0)return false;
  const novel=options.filter(id=>!game.activityCounts[id]);
@@ -552,7 +600,7 @@ function performActivity(tile,place){
  const a=WUBBY_ACTIVITIES[chosen];
  game.wubby.activity=chosen;
  rest('doing',a.time);
- speak(a.say,Math.min(4,a.time));
+ if(!holdSpeech)speakForActivity(chosen,tile);
  recordActivity(chosen,place);
  return true;
 }
@@ -2002,10 +2050,23 @@ function wubbyLux(time){
  shadow(x,y+3*zoom,9*zoom,3.3*zoom,.24);
  ctx.save();ctx.translate(x,y+4*zoom-bob*zoom);ctx.scale(s,s);
  wubbyShape(time,dir,k.state);ctx.restore();drawActivityEffect(time,x,y,zoom,k);
- if(k.speechFor>0&&k.speech){ctx.font='bold 12px Trebuchet MS, sans-serif';let translated=tr(k.speech);let tw=Math.min(220,ctx.measureText(translated).width+22),yy=y-53*zoom;
-   ctx.fillStyle='#fffdf4fa';ctx.strokeStyle='#cfdcb9';ctx.lineWidth=1.2;
-   ctx.beginPath();ctx.roundRect?ctx.roundRect(x-tw/2,yy-25,tw,27,10):ctx.rect(x-tw/2,yy-25,tw,27);ctx.fill();ctx.stroke();
-   poly([[x-4,yy+1],[x+4,yy+1],[x,yy+7]],'#fffdf4');ctx.fillStyle='#536e59';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(translated,x,yy-12,tw-9);
+ if(k.speechFor>0&&k.speech){
+  ctx.save();ctx.font='bold 12px Trebuchet MS, sans-serif';
+  const words=tr(k.speech).split(/\s+/),maxWidth=Math.min(248,Math.max(124,width-22)),limit=maxWidth-20;
+  const lines=[];let line='';
+  for(const word of words){const candidate=line?line+' '+word:word;
+   if(line&&ctx.measureText(candidate).width>limit){lines.push(line);line=word;}else line=candidate;
+  }
+  if(line)lines.push(line);
+  const lineHeight=15,boxHeight=10+lines.length*lineHeight;
+  const widest=Math.max(0,...lines.map(t=>ctx.measureText(t).width));
+  const tw=Math.min(maxWidth,Math.max(82,widest+20)),yy=y-53*zoom,top=yy-boxHeight;
+  ctx.fillStyle='#fffdf4fa';ctx.strokeStyle='#cfdcb9';ctx.lineWidth=1.2;
+  ctx.beginPath();ctx.roundRect?ctx.roundRect(x-tw/2,top,tw,boxHeight,10):ctx.rect(x-tw/2,top,tw,boxHeight);
+  ctx.fill();ctx.stroke();poly([[x-4,yy+1],[x+4,yy+1],[x,yy+7]],'#fffdf4');
+  ctx.fillStyle='#536e59';ctx.textAlign='center';ctx.textBaseline='middle';
+  lines.forEach((text,i)=>ctx.fillText(text,x,top+12+i*lineHeight,tw-14));
+  ctx.restore();
  }
 }
 function draw(time){ctx.clearRect(0,0,width,height);
@@ -2112,7 +2173,7 @@ function step(){let k=game.wubby;k.from=key(Math.round(k.y),Math.round(k.x));k.t
  k.prog=0;k.state='walking';}
 
 function rest(state,time){let k=game.wubby;k.state=state;k.stateTime=time;}
-function arrive(){let k=game.wubby,tile=game.board[k.goal],p=k.goal;
+function arrive(){let k=game.wubby,tile=game.board[k.goal],p=k.goal,firstLine=null;
   // Turn toward a nearby environmental feature, or the cottage when coming home.
   if(k.intent==='sleeping'||k.intent==='eating'||k.intent==='shelter') {k.facing=3;}
   else if(k.intent==='collect') {k.facing=5;}
@@ -2138,16 +2199,27 @@ function arrive(){let k=game.wubby,tile=game.board[k.goal],p=k.goal;
    game.farthest=distanceHome;
    if(distanceHome>=8&&distanceHome%4===0)log('I wandered farther than ever before. What a big world!');
   }
-  game.discoveries++;let intros={home:'Home, sweet home.',grass:'Some soft grass to sit on.',meadow:'What a peaceful little meadow!',forest:'A shady grove of pine trees. How lovely!',orchard:'Apples! I wonder if they taste good.',pond:'A little pond. The water sparkles.',flowers:'Look at all these beautiful flowers!',garden:'A garden full of tasty things!',hill:'From up here, everything looks so small.',mushroom:'Mushrooms! I should remember this place.',path:'A winding path! Where does it go?',brook:'A little brook, flowing so gently.',berries:'What lovely berries!',birch:'These trees are so peaceful.',sunflowers:'They are as bright as the sunshine!',well:'An old well! I wonder who built it.',picnic:'A perfect place for a picnic!',rocks:'So many interesting stones!',stonecircle:'An ancient circle of stones! Who left it here?',ruins:'These old ruins must have a story.',cave:'A hidden cave! I wonder what is inside.',shrine:'What a mysterious monument!'};speak(intros[tile]||'What a discovery!',3);log(intros[tile]||'I found a new place!');game.happiness=clamp(game.happiness+1.7,10,100);}
+  game.discoveries++;let intros={home:'Home, sweet home.',grass:'Some soft grass to sit on.',meadow:'What a peaceful little meadow!',forest:'A shady grove of pine trees. How lovely!',orchard:'Apples! I wonder if they taste good.',pond:'A little pond. The water sparkles.',flowers:'Look at all these beautiful flowers!',garden:'A garden full of tasty things!',hill:'From up here, everything looks so small.',mushroom:'Mushrooms! I should remember this place.',path:'A winding path! Where does it go?',brook:'A little brook, flowing so gently.',berries:'What lovely berries!',birch:'These trees are so peaceful.',sunflowers:'They are as bright as the sunshine!',well:'An old well! I wonder who built it.',picnic:'A perfect place for a picnic!',rocks:'So many interesting stones!',stonecircle:'An ancient circle of stones! Who left it here?',ruins:'These old ruins must have a story.',cave:'A hidden cave! I wonder what is inside.',shrine:'What a mysterious monument!'};firstLine=(WUBBY_DIALOGUE.first[tile]||[])[0]||intros[tile]||'What a discovery!';log(firstLine);game.happiness=clamp(game.happiness+1.7,10,100);}
  else if(visits>=3&&tile!=='home'){
   game.affinity[tile]=(game.affinity[tile]||0)+1;
   if(!game.favorite||game.affinity[tile]>game.affinity[game.favorite]+2){game.favorite=tile;log(`I think ${LABEL[tile].toLowerCase()} might be my favorite place of all.`);speak('I love it here!',3);game.happiness=clamp(game.happiness+4,0,100);}
  }
- if(tile==='pond'){speak('So peaceful...',2.3);game.happiness=clamp(game.happiness+1,0,100);}
+ if(tile==='pond'){game.happiness=clamp(game.happiness+1,0,100);}
  if(tile==='flowers'){game.happiness=clamp(game.happiness+1,0,100)}
  if(k.intent==='enjoy'){
   scoreWubbyRegion(p);
-  if(!maybeWubbyBuild(tile,p))performActivity(tile,p);
+  // Let first-time landmark discoveries stand on their own.
+  const built=(!visits&&landmark(tile))?false:maybeWubbyBuild(tile,p);
+  if(!built&&!(landmark(tile)&&!visits)){
+   const acted=performActivity(tile,p,!visits||landmark(tile));
+   if(!acted&&visits&&!landmark(tile)&&!maybeRareThought())speakAtTile(tile);
+  }
+ }
+ // Final remark wins over generic region and activity messages.
+ if(firstLine){
+  speak(firstLine,Math.min(7,Math.max(4.2,3+tr(firstLine).length*.05)));
+ }else if(landmark(tile)){
+  if(!maybeRareThought())speakAtTile(tile,'landmark');
  }
 }
 function update(dt){let k=game.wubby;
