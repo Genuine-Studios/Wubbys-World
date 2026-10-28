@@ -158,6 +158,12 @@ function tr(value){
  const original=String(value??'');
  if(language==='en')return original;
  if(Object.prototype.hasOwnProperty.call(NL_TEXT,original))return NL_TEXT[original];
+ // Older versions saved some messages cut off at 26 characters.
+ // Translate their unique full text without changing the saved data.
+ if(original.length===26){
+   const matches=Object.entries(NL_TEXT).filter(([english])=>english.length>26&&english.startsWith(original));
+   if(matches.length===1)return matches[0][1];
+ }
  let m;
  if((m=/^Something feels wrong\. The (.+) I loved has disappeared\.$/.exec(original)))return 'Er klopt iets niet. Mijn favoriete plek, '+trTileName(m[1])+', is verdwenen.';
  if((m=/^There's a (.+) close to home! That makes me happy\.$/.exec(original)))return 'Er is een '+trTileName(m[1])+' vlak bij huis! Daar word ik blij van.';
@@ -176,6 +182,7 @@ function setLanguage(){
   node.nodeValue=original.slice(0,pos)+tr(trim)+original.slice(pos+trim.length);
  }
  document.getElementById('languageSelect').value=language;
+ document.querySelector('label[for="languageSelect"]').textContent=language==='nl'?'🌐 Taal':'🌐 Language';
  document.getElementById('world').setAttribute('aria-label',language==='nl'?'Isometrische wereld van Wubby. Kies een tegel en tik naast het bestaande land.':'Interactive isometric map of Wubby\'s world. Choose a tile below then tap a space beside the existing land.');
  const titles={zoomOut:['Uitzoomen','Zoom out'],zoomIn:['Inzoomen','Zoom in'],recenter:['Terug naar Wubby','Return to Wubby']};
  for(const [id,items] of Object.entries(titles))document.getElementById(id).title=items[language==='nl'?0:1];
@@ -841,10 +848,10 @@ function wubbyLux(time){
  shadow(x,y+3*zoom,9*zoom,3.3*zoom,.24);
  ctx.save();ctx.translate(x,y+4*zoom-bob*zoom);ctx.scale(s,s);
  wubbyShape(time,dir,k.state);ctx.restore();
- if(k.speechFor>0&&k.speech){ctx.font='bold 12px Trebuchet MS, sans-serif';let tw=Math.min(184,ctx.measureText(tr(k.speech)).width+22),yy=y-53*zoom;
+ if(k.speechFor>0&&k.speech){ctx.font='bold 12px Trebuchet MS, sans-serif';let translated=tr(k.speech);let tw=Math.min(220,ctx.measureText(translated).width+22),yy=y-53*zoom;
    ctx.fillStyle='#fffdf4fa';ctx.strokeStyle='#cfdcb9';ctx.lineWidth=1.2;
    ctx.beginPath();ctx.roundRect?ctx.roundRect(x-tw/2,yy-25,tw,27,10):ctx.rect(x-tw/2,yy-25,tw,27);ctx.fill();ctx.stroke();
-   poly([[x-4,yy+1],[x+4,yy+1],[x,yy+7]],'#fffdf4');ctx.fillStyle='#536e59';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(tr(k.speech),x,yy-12,tw-9);
+   poly([[x-4,yy+1],[x+4,yy+1],[x,yy+7]],'#fffdf4');ctx.fillStyle='#536e59';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(translated,x,yy-12,tw-9);
  }
 }
 function draw(time){ctx.clearRect(0,0,width,height);
@@ -893,7 +900,7 @@ function arrive(){let k=game.wubby,tile=game.board[k.goal],p=k.goal;
    game.food=clamp(game.food+43,0,100);rest('collect',3.2);speak(tile==='orchard'?'Fresh apples!':'Something tasty!',3);if(Math.random()<.28)log(tile==='orchard'?'Picked a sweet apple from the orchard. Delicious!':'Found a little treat growing nearby.');return;
  }if(k.intent==='shelter'){rest('shelter',4);speak('Nice and dry.',3);return;}
  rest('enjoy',rand(1.7,4.1));let visits=game.visited[p]||0;game.visited[p]=visits+1;
- if(!visits){game.discoveries++;let intros={home:'Home, sweet home.',grass:'Some soft grass to sit on.',meadow:'What a peaceful little meadow!',forest:'A shady grove of pine trees. How lovely!',orchard:'Apples! I wonder if they taste good.',pond:'A little pond. The water sparkles.',flowers:'Look at all these beautiful flowers!',garden:'A garden full of tasty things!',hill:'From up here, everything looks so small.',mushroom:'Mushrooms! I should remember this place.'};speak(intros[tile]?.slice(0,26)||'What a discovery!',3);log(intros[tile]||'I found a new place!');game.happiness=clamp(game.happiness+1.7,10,100);}
+ if(!visits){game.discoveries++;let intros={home:'Home, sweet home.',grass:'Some soft grass to sit on.',meadow:'What a peaceful little meadow!',forest:'A shady grove of pine trees. How lovely!',orchard:'Apples! I wonder if they taste good.',pond:'A little pond. The water sparkles.',flowers:'Look at all these beautiful flowers!',garden:'A garden full of tasty things!',hill:'From up here, everything looks so small.',mushroom:'Mushrooms! I should remember this place.'};speak(intros[tile]||'What a discovery!',3);log(intros[tile]||'I found a new place!');game.happiness=clamp(game.happiness+1.7,10,100);}
  else if(visits>=3&&tile!=='home'){
   game.affinity[tile]=(game.affinity[tile]||0)+1;
   if(!game.favorite||game.affinity[tile]>game.affinity[game.favorite]+2){game.favorite=tile;log(`I think ${LABEL[tile].toLowerCase()} might be my favorite place of all.`);speak('I love it here!',3);game.happiness=clamp(game.happiness+4,0,100);}
