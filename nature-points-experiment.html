@@ -143,6 +143,9 @@ body{background:radial-gradient(circle at 8% 2%,#fff1d3 0,#f7f4e5 30%,#e7f1e5 10
 .nature-totals>div{background:#e9f2e4;border:1px solid #d6e6ce;border-radius:11px;padding:9px}
 .nature-totals small{display:block;color:#66806d;font-size:10px;margin-bottom:4px}
 .nature-totals strong{font-size:19px;color:#416b4c;font-variant-numeric:tabular-nums}
+.region-progress{font-size:10px;color:#5c765e;line-height:1.5;margin:-4px 0 11px;min-height:12px}
+.region-progress span{display:block}
+.region-progress strong{color:#426d4c;font-variant-numeric:tabular-nums}
 .nature-head{display:flex;align-items:baseline;justify-content:space-between;gap:7px;margin-bottom:7px}
 .nature-head strong{font-size:13px;color:#49674e}.nature-head small{font-size:10px;color:#708576}
 .landmark-shop{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;max-height:260px;overflow:auto}
@@ -307,6 +310,7 @@ body{background:radial-gradient(circle at 8% 2%,#fff1d3 0,#f7f4e5 30%,#e7f1e5 10
  </div><div class="tile-unlock"><strong id="tileUnlockLabel"></strong><div class="catalog-chips" id="tileCatalog"></div><p id="milestoneInfo" class="milestone-info"></p></div></section><section class="panel economy-panel"><div class="nature-economy">
  <div class="nature-totals"><div><small id="natureLabel">🌿 Natuurpunten</small><strong id="natureBalance">0</strong></div>
  <div><small id="happinessLabel">Geluksbonus (daggemiddelde)</small><strong id="natureBonus">+0%</strong></div></div>
+ <div id="regionProgress" class="region-progress" aria-live="off"></div>
  <div class="nature-head"><strong id="shopHeading">Bijzondere plekken kopen</strong><small id="shopTip">Eerst vrijspelen, dan kopen</small></div>
  <div id="landmarkShop" class="landmark-shop"></div>
  </div></section>
@@ -783,6 +787,29 @@ function regionsOf(family){
  return groups;
 }
 function regionAt(k,family){return regionsOf(family).find(group=>group.includes(k))||[];}
+
+function renderRegionProgress(){
+ const names={
+  woodland:['🌲 Bos','🌲 Forest'],orchard:['🍎 Boomgaard','🍎 Orchard'],
+  water:['💧 Meer','💧 Lake'],meadow:['🌼 Bloeiend gebied','🌼 Meadow'],
+  fungi:['🍄 Paddenstoelen','🍄 Mushrooms']
+ };
+ const upcoming=[];
+ for(const family of Object.keys(REGION_REWARDS)){
+  const size=Math.max(0,...regionsOf(family).map(group=>group.length));
+  if(size===0)continue;
+  const reward=REGION_REWARDS[family].find(([required])=>required>size);
+  if(reward)upcoming.push({family,size,threshold:reward[0],points:reward[1],remaining:reward[0]-size});
+ }
+ upcoming.sort((a,b)=>a.remaining-b.remaining||b.size-a.size);
+ const first=upcoming.slice(0,2);
+ $('regionProgress').innerHTML=first.length
+  ?(language==='nl'?'Volgende gebiedsbonussen:':'Next region rewards:')+
+   first.map(e=>'<span>'+names[e.family][language==='nl'?0:1]+': <strong>'+
+    e.size+'/'+e.threshold+'</strong> ('+'+'+e.points+')</span>').join('')
+  :'';
+}
+
 function happinessBonus(){
  const avg=game.previousDayHappiness??game.happiness;
  return avg>=95?.30:avg>=80?.20:avg>=60?.10:avg>=40?.05:0;
@@ -927,7 +954,7 @@ function renderBank(){
  $('bank').querySelectorAll('button').forEach(b=>b.onclick=()=>{
   buildMode='terrain';game.selected=Number(b.dataset.i);renderBank();save();
  });
- renderRoadBank();renderCatalog();renderShop();
+ renderRoadBank();renderCatalog();renderShop();renderRegionProgress();
 }
 function ui(){let count=game.board.filter(Boolean).length;renderShop(); $('day').textContent=game.day;$('tileTotal').textContent=count;$('discoveries').textContent=game.discoveries;$('worldProgress').style.width=(100*count/(N*N))+'%';$('worldPercent').textContent=Math.round(count*100/(N*N))+'%';$('foodFill').style.width=game.food+'%';$('foodText').textContent=Math.round(game.food)+'%';$('restFill').style.width=game.energy+'%';$('restText').textContent=Math.round(game.energy)+'%';$('happyFill').style.width=game.happiness+'%';$('mood').textContent=tr(game.happiness>85?'Feeling wonderful':game.happiness>64?'Feeling content':game.happiness>43?'A little unsettled':'Feeling gloomy');$('moodReason').textContent=tr(game.happiness>74?'Life has its little pleasures':game.happiness>43?'Making the best of things':'Missing something special');$('activity').textContent=tr(({'thinking':'Looking around','walking':'Exploring the neighborhood','enjoy':'Enjoying the scenery','eating':'Having a little snack','sleeping':'Asleep in his cottage','collect':'Gathering something tasty','shelter':'Keeping dry','apple':'Investigating an apple','building':'Building something'})[game.wubby.state]||'Out and about');if(game.wubby.state==='doing'&&WUBBY_ACTIVITIES[game.wubby.activity])$('activity').textContent=activityLabel(game.wubby.activity);renderActivities();}
 function available(r,c){const v=game.board[key(r,c)];if(v)return true;return neighbors(r,c).some(([rr,cc])=>!!game.board[key(rr,cc)]);}
