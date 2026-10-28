@@ -157,7 +157,7 @@ body{background:radial-gradient(circle at 8% 2%,#fff1d3 0,#f7f4e5 30%,#e7f1e5 10
 <script src="art-v09.js?v=2"></script>
 <script src="art-v010.js?v=1"></script>
 <script src="art-v011.js?v=1"></script>
-<script src="art-v013.js?v=1"></script>
+<script src="art-v013.js?v=2"></script>
 <script>
 (()=>{'use strict';
 const N=15, HOME=7, TILE_W=112, TILE_H=57, STORE='wubbys-world-real-tile-art-test-v1';
@@ -239,7 +239,7 @@ function paintedTileArt(kind,x,y){
   // isometric ground edge, rather than floating above the tile.
   const sizes={grass:110,path:113,brook:112,orchard:110,berries:113,birch:110,
     sunflowers:108,well:104,picnic:111,rocks:111,hill:110,garden:110,
-    flowers:109,pond:109,forest:111,mushroom:111};
+    flowers:109,pond:109,forest:111,mushroom:111,meadow:110};
   const spriteWidth=(sizes[kind]||109)*zoom;
   const spriteHeight=spriteWidth*(im.naturalHeight/im.naturalWidth);
   ctx.drawImage(im,x-spriteWidth*.5,y+31*zoom-spriteHeight,spriteWidth,spriteHeight);
