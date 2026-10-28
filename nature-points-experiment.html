@@ -479,7 +479,7 @@ function fresh(){
  {day:1,text:'A lovely morning for a walk.'}],
  wubby:{r:HOME,c:HOME,x:HOME,y:HOME,from:home,to:home,prog:1,state:'thinking',
  stateTime:2,speech:'',speechFor:0,goal:null,route:[],lastMemory:'',facing:7,lookFacing:null,lookTime:0,blinkTime:0},
- apples:0,sky:'sun',weatherTimer:0,discoveries:1,activityCounts:{},activityMoments:[],farthest:0,dialogueDecks:{},recentSpeech:[]};
+ apples:0,sky:'sun',weatherTimer:0,discoveries:1,activityCounts:{},activityMoments:[],farthest:0,dialogueDecks:{},recentSpeech:[],discoveredTypes:{home:1}};
 }
 function migrateSmallWorld(src){
  const out={...fresh(),...src},offset=HOME-7;
@@ -531,6 +531,12 @@ function speak(s,time=3){game.wubby.speech=s;game.wubby.speechFor=time;}
  for(const r of WUBBY_DIALOGUE.rare||[])NL_TEXT[r.line[0]]=r.line[1];
  game.dialogueDecks=game.dialogueDecks&&typeof game.dialogueDecks==='object'?game.dialogueDecks:{};
  game.recentSpeech=Array.isArray(game.recentSpeech)?game.recentSpeech.slice(-18):[];
+ // Rebuild from visited positions so older saved worlds also know familiar terrain.
+ game.discoveredTypes={};
+ for(const [where,visits] of Object.entries(game.visited||{})){
+  const terrain=game.board[Number(where)];
+  if(visits>0&&terrain)game.discoveredTypes[terrain]=(game.discoveredTypes[terrain]||0)+1;
+ }
  function sayFromDeck(category,lines){
   if(!Array.isArray(lines)||!lines.length)return false;
   const old=Array.isArray(game.dialogueDecks[category])?game.dialogueDecks[category]:[];
@@ -2199,7 +2205,14 @@ function arrive(){let k=game.wubby,tile=game.board[k.goal],p=k.goal,firstLine=nu
    game.farthest=distanceHome;
    if(distanceHome>=8&&distanceHome%4===0)log('I wandered farther than ever before. What a big world!');
   }
-  game.discoveries++;let intros={home:'Home, sweet home.',grass:'Some soft grass to sit on.',meadow:'What a peaceful little meadow!',forest:'A shady grove of pine trees. How lovely!',orchard:'Apples! I wonder if they taste good.',pond:'A little pond. The water sparkles.',flowers:'Look at all these beautiful flowers!',garden:'A garden full of tasty things!',hill:'From up here, everything looks so small.',mushroom:'Mushrooms! I should remember this place.',path:'A winding path! Where does it go?',brook:'A little brook, flowing so gently.',berries:'What lovely berries!',birch:'These trees are so peaceful.',sunflowers:'They are as bright as the sunshine!',well:'An old well! I wonder who built it.',picnic:'A perfect place for a picnic!',rocks:'So many interesting stones!',stonecircle:'An ancient circle of stones! Who left it here?',ruins:'These old ruins must have a story.',cave:'A hidden cave! I wonder what is inside.',shrine:'What a mysterious monument!'};firstLine=(WUBBY_DIALOGUE.first[tile]||[])[0]||intros[tile]||'What a discovery!';log(firstLine);game.happiness=clamp(game.happiness+1.7,10,100);}
+  game.discoveries++;let intros={home:'Home, sweet home.',grass:'Some soft grass to sit on.',meadow:'What a peaceful little meadow!',forest:'A shady grove of pine trees. How lovely!',orchard:'Apples! I wonder if they taste good.',pond:'A little pond. The water sparkles.',flowers:'Look at all these beautiful flowers!',garden:'A garden full of tasty things!',hill:'From up here, everything looks so small.',mushroom:'Mushrooms! I should remember this place.',path:'A winding path! Where does it go?',brook:'A little brook, flowing so gently.',berries:'What lovely berries!',birch:'These trees are so peaceful.',sunflowers:'They are as bright as the sunshine!',well:'An old well! I wonder who built it.',picnic:'A perfect place for a picnic!',rocks:'So many interesting stones!',stonecircle:'An ancient circle of stones! Who left it here?',ruins:'These old ruins must have a story.',cave:'A hidden cave! I wonder what is inside.',shrine:'What a mysterious monument!'};const firstKind=!(game.discoveredTypes[tile]>0);
+   game.discoveredTypes[tile]=(game.discoveredTypes[tile]||0)+1;
+   const opening=(WUBBY_DIALOGUE.first[tile]||[])[0]||intros[tile]||'What a discovery!';
+   if(firstKind||landmark(tile))firstLine=opening;
+   else if((WUBBY_DIALOGUE.tile||{})[tile]?.length){
+    speakAtTile(tile);firstLine=game.wubby.speech;
+   }else firstLine=opening;
+   log(firstLine);game.happiness=clamp(game.happiness+1.7,10,100);}
  else if(visits>=3&&tile!=='home'){
   game.affinity[tile]=(game.affinity[tile]||0)+1;
   if(!game.favorite||game.affinity[tile]>game.affinity[game.favorite]+2){game.favorite=tile;log(`I think ${LABEL[tile].toLowerCase()} might be my favorite place of all.`);speak('I love it here!',3);game.happiness=clamp(game.happiness+4,0,100);}
