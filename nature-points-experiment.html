@@ -755,12 +755,14 @@ const REGION_FAMILIES={
  meadow:['meadow','clover','heath','flowers','highmeadow'],
  fungi:['mushroom','giantmush']
 };
+// Each milestone is a separate one-time award for a continuous region.
+const REGION_REWARD_VERSION=2;
 const REGION_REWARDS={
- woodland:[[4,15],[9,35]],
- orchard:[[3,10],[6,25]],
- water:[[4,20],[9,40]],
- meadow:[[4,12],[8,24]],
- fungi:[[4,16]]
+ woodland:[[4,15],[9,35],[16,70],[25,110],[36,170],[49,245]],
+ orchard:[[3,10],[6,25],[16,65],[25,105],[36,160],[49,235]],
+ water:[[4,20],[9,40],[16,80],[25,130],[36,200],[49,290]],
+ meadow:[[4,12],[8,24],[16,60],[25,100],[36,150],[49,220]],
+ fungi:[[4,16],[9,35],[16,65],[25,110],[36,170],[49,245]]
 };
 function isFamily(tile,family){return REGION_FAMILIES[family]?.includes(tile)||false;}
 function regionsOf(family){
@@ -865,6 +867,13 @@ function initializeEconomy(){
  if(!game.economyInitialized){
   game.economyInitialized=true;
   scoreRegions(true); // Existing worlds receive once-only credit for completed areas.
+ }
+ // Upgrade existing saved worlds without erasing their progress. Previous
+ // threshold claims remain intact; newly added milestones pay out only once.
+ if((game.regionRewardVersion||0)<REGION_REWARD_VERSION){
+  scoreRegions(true);
+  game.regionRewardVersion=REGION_REWARD_VERSION;
+  save();
  }
 }
 function purchaseLandmark(type){
