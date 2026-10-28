@@ -619,7 +619,7 @@ function escapeHTML(s){return String(s).replace(/[&<>\"]/g,t=>({'&':'&amp;','<':
 const WATER_TERRAIN=new Set(['pond','brook']);
 const UNWALKABLE_TERRAIN=new Set([
  'pond','brook','waterfall','hotspring','marsh','reeds',
- 'hill','rocks','plateau','ridge','gorge','crystal'
+ 'hill','rocks','plateau','ridge','gorge','crystal','sunkenboat','cave'
 ]);
 const NO_ROAD_TERRAIN=new Set([
  'hill','rocks','plateau','ridge','gorge','crystal',
@@ -727,7 +727,7 @@ function roadPreview(spec){
 }
 function renderRoadBank(){
  $('roadHeading').textContent=language==='nl'?'Padtegeltjesselectieveld':'Road tile selection';
- $('roadSub').textContent=language==='nl'?'Draaibare, losse wegstukken':'Independent rotating road pieces';
+ $('roadSub').textContent=language==='nl'?'Draai paden om ze te verbinden. Op water worden het bruggen.':'Rotate roads to connect them. Roads over water become bridges.';
  $('roadBank').innerHTML=game.roadBank.map((kind,i)=>{
   const active=buildMode==='road'&&game.roadSelected===i;
   return '<button type="button" class="tile-option road-card '+(active?'selected':'')+
