@@ -506,6 +506,158 @@ function renderRoadBank(){
  $('rotateLeft').disabled=buildMode!=='road';$('rotateRight').disabled=buildMode!=='road';
 }
 
+
+// Landscape economy: scores are tied to enduring tile-coordinate claims, not replace/rebuild actions.
+const REGION_FAMILIES={
+ woodland:['forest','oakwood','willow','mosswood','evergreen','silverbirch','birch','bamboo'],
+ orchard:['orchard','wildorchard'],
+ water:['pond'],
+ meadow:['meadow','clover','heath','flowers','highmeadow'],
+ fungi:['mushroom','giantmush']
+};
+const REGION_REWARDS={
+ woodland:[[4,15],[9,35]],
+ orchard:[[3,10],[6,25]],
+ water:[[4,20],[9,40]],
+ meadow:[[4,12],[8,24]],
+ fungi:[[4,16]]
+};
+function isFamily(tile,family){return REGION_FAMILIES[family]?.includes(tile)||false;}
+function regionsOf(family){
+ const good=new Set(REGION_FAMILIES[family]||[]),seen=new Set(),groups=[];
+ for(let i=0;i<game.board.length;i++){
+  if(seen.has(i)||!good.has(game.board[i]))continue;
+  let group=[],queue=[i];seen.add(i);
+  while(queue.length){
+   const k=queue.pop();group.push(k);
+   const {r,c}=pos(k);
+   for(const [rr,cc] of neighbors(r,c)){
+    const n=key(rr,cc);
+    if(!seen.has(n)&&good.has(game.board[n])){seen.add(n);queue.push(n);}
+   }
+  }
+  groups.push(group);
+ }
+ return groups;
+}
+function regionAt(k,family){return regionsOf(family).find(group=>group.includes(k))||[];}
+function happinessBonus(){
+ const avg=game.previousDayHappiness??game.happiness;
+ return avg>=95?.30:avg>=80?.20:avg>=60?.10:avg>=40?.05:0;
+}
+function pointsEarned(base){
+ return Math.round(base*(1+happinessBonus()));
+}
+function awardNaturePoints(base,description,quiet=false){
+ const score=pointsEarned(base);
+ game.naturePoints+=score;game.naturePointsLifetime+=score;
+ game.pointHistory.unshift({day:game.day,points:score,reason:description});
+ game.pointHistory=game.pointHistory.slice(0,30);
+ if(!quiet){
+  notifyWubby((language==='nl'?'🌿 +':'🌿 +')+score+' '+(language==='nl'?'natuurpunten!':'Nature Points!')+' '+description);
+  log((language==='nl'?'Natuurpunten: +':'Nature Points: +')+score+'. '+description);
+ }
+ return score;
+}
+function scoreRegions(quiet=false){
+ for(const family of Object.keys(REGION_FAMILIES)){
+  const groups=regionsOf(family);
+  for(const [threshold,points] of REGION_REWARDS[family]){
+   const claimKey=family+':'+threshold;
+   const claimed=game.regionClaims[claimKey]||(game.regionClaims[claimKey]={});
+   for(const group of groups){
+    if(group.length<threshold||group.some(k=>claimed[k]))continue;
+    for(const k of group)claimed[k]=true;
+    const names={woodland:['bosgebied','forest'],orchard:['boomgaard','orchard'],water:['meertje','lake'],
+      meadow:['bloeiend landschap','flowering landscape'],fungi:['paddenstoelengebied','mushroom grove']};
+    awardNaturePoints(points,(language==='nl'?names[family][0]:names[family][1])+
+      ' ('+group.length+' '+(language==='nl'?'tegels':'tiles')+')',quiet);
+   }
+  }
+ }
+ // Reward tasteful edges without allowing perpetual rewards for replacing the same cells.
+ const pairs=[['water','woodland'],['orchard','meadow'],['water','meadow']];
+ for(let k=0;k<game.board.length;k++){
+  const {r,c}=pos(k);
+  for(const [rr,cc] of neighbors(r,c)){
+   const n=key(rr,cc);if(n<k)continue;
+   for(const [fa,fb] of pairs){
+    const yes=(isFamily(game.board[k],fa)&&isFamily(game.board[n],fb))||
+              (isFamily(game.board[k],fb)&&isFamily(game.board[n],fa));
+    if(!yes)continue;
+    const id=fa+'+'+fb+':'+k+'-'+n;
+    if(!game.combinationClaims[id]){
+     game.combinationClaims[id]=true;
+     awardNaturePoints(4,language==='nl'?'Mooie natuurlijke overgang':'Beautiful natural transition',quiet);
+    }
+   }
+  }
+ }
+}
+function scoreWubbyRegion(k){
+ for(const family of ['woodland','water','orchard']){
+  const group=regionAt(k,family);
+  if(group.length<4)continue;
+  const claims=game.regionVisits[family]||(game.regionVisits[family]={});
+  if(group.some(i=>claims[i]))continue;
+  group.forEach(i=>claims[i]=true);
+  awardNaturePoints(10,language==='nl'?'Wubby verkent een bijzonder gebied':'Wubby explored a remarkable area');
+ }
+}
+function initializeEconomy(){
+ game.naturePoints=Number.isFinite(game.naturePoints)?game.naturePoints:0;
+ game.naturePointsLifetime=Number.isFinite(game.naturePointsLifetime)?game.naturePointsLifetime:0;
+ game.regionClaims=game.regionClaims||{};
+ game.combinationClaims=game.combinationClaims||{};
+ game.regionVisits=game.regionVisits||{};
+ game.purchasedLandmarks=game.purchasedLandmarks||{};
+ game.pointHistory=game.pointHistory||[];
+ game.previousDayHappiness=Number.isFinite(game.previousDayHappiness)?game.previousDayHappiness:game.happiness;
+ game.happinessIntegral=Number.isFinite(game.happinessIntegral)?game.happinessIntegral:0;
+ game.happinessTime=Number.isFinite(game.happinessTime)?game.happinessTime:0;
+ if(!game.economyInitialized){
+  game.economyInitialized=true;
+  scoreRegions(true); // Existing worlds receive once-only credit for completed areas.
+ }
+}
+function purchaseLandmark(type){
+ if(!landmark(type))return;
+ if(game.board.includes(type)){toast(language==='nl'?'Deze plek bestaat al.':'This place already exists.');return;}
+ if(worldProgress()<LANDMARKS[type]){toast(language==='nl'?'Dit landmark is nog niet vrijgespeeld.':'Landmark not yet unlocked.');return;}
+ if(game.purchasedLandmarks[type]){
+  game.selectedLandmark=type;buildMode='landmark';renderBank();return;
+ }
+ const cost=LANDMARK_COSTS[type];
+ if(game.naturePoints<cost){toast(language==='nl'?'Nog niet genoeg natuurpunten.':'Not enough Nature Points yet.');return;}
+ game.naturePoints-=cost;
+ game.purchasedLandmarks[type]=true;game.selectedLandmark=type;buildMode='landmark';
+ toast(language==='nl'?'Bijzondere plek gekocht! Kies een lege tegel.':'Landmark purchased! Choose an empty tile.');
+ renderBank();ui();save();
+}
+function renderShop(){
+ $('natureLabel').textContent=language==='nl'?'🌿 Natuurpunten':'🌿 Nature Points';
+ $('happinessLabel').textContent=language==='nl'?'Geluksbonus (daggemiddelde)':'Happiness bonus (daily average)';
+ $('shopHeading').textContent=language==='nl'?'Bijzondere plekken kopen':'Buy landmarks';
+ $('shopTip').textContent=language==='nl'?'Vrijspelen → kopen → plaatsen':'Unlock → buy → place';
+ $('natureBalance').textContent=String(game.naturePoints);
+ $('natureBonus').textContent='+'+Math.round(happinessBonus()*100)+'%';
+ const progress=worldProgress(),display=LANDMARK_IDS.filter(t=>
+  game.purchasedLandmarks[t]||game.board.includes(t)||progress>=LANDMARKS[t]);
+ const upcoming=LANDMARK_IDS.filter(t=>progress<LANDMARKS[t]).sort((a,b)=>LANDMARKS[a]-LANDMARKS[b]).slice(0,2);
+ $('landmarkShop').innerHTML=[...new Set([...display,...upcoming])].sort((a,b)=>LANDMARKS[a]-LANDMARKS[b]).map(t=>{
+  const exists=game.board.includes(t),ready=game.purchasedLandmarks[t]&&!exists,unlocked=progress>=LANDMARKS[t];
+  const cls=exists?'locked':ready?'purchased':unlocked&&game.naturePoints>=LANDMARK_COSTS[t]?'available':'locked';
+  const status=exists?(language==='nl'?'Geplaatst':'Placed'):
+    ready?(language==='nl'?'Plaatsen':'Place'):
+    !unlocked?('🔒 '+LANDMARKS[t]+'%'):
+    (LANDMARK_COSTS[t]+' '+(language==='nl'?'punten':'points'));
+  return '<button type="button" class="landmark-buy '+cls+(buildMode==='landmark'&&game.selectedLandmark===t?' picked':'')+
+   '" data-landmark="'+t+'" '+(exists||!unlocked?'disabled':'')+'>'+
+   '<b>'+EMOJI[t]+' '+escapeHTML(tr(LABEL[t]))+'</b><small>'+status+'</small></button>';
+ }).join('');
+ $('landmarkShop').querySelectorAll('button').forEach(b=>b.onclick=()=>purchaseLandmark(b.dataset.landmark));
+}
+
 function renderBank(){
  $('bank').innerHTML=game.bank.map((t,i)=>
   '<button type="button" class="tile-option '+(buildMode==='terrain'&&game.selected===i?'selected':'')+
@@ -515,9 +667,9 @@ function renderBank(){
  $('bank').querySelectorAll('button').forEach(b=>b.onclick=()=>{
   buildMode='terrain';game.selected=Number(b.dataset.i);renderBank();save();
  });
- renderRoadBank();renderCatalog();
+ renderRoadBank();renderCatalog();renderShop();
 }
-function ui(){let count=game.board.filter(Boolean).length; $('day').textContent=game.day;$('tileTotal').textContent=count;$('discoveries').textContent=game.discoveries;$('worldProgress').style.width=(100*count/(N*N))+'%';$('worldPercent').textContent=Math.round(count*100/(N*N))+'%';$('foodFill').style.width=game.food+'%';$('foodText').textContent=Math.round(game.food)+'%';$('restFill').style.width=game.energy+'%';$('restText').textContent=Math.round(game.energy)+'%';$('happyFill').style.width=game.happiness+'%';$('mood').textContent=tr(game.happiness>85?'Feeling wonderful':game.happiness>64?'Feeling content':game.happiness>43?'A little unsettled':'Feeling gloomy');$('moodReason').textContent=tr(game.happiness>74?'Life has its little pleasures':game.happiness>43?'Making the best of things':'Missing something special');$('activity').textContent=tr(({'thinking':'Looking around','walking':'Exploring the neighborhood','enjoy':'Enjoying the scenery','eating':'Having a little snack','sleeping':'Asleep in his cottage','collect':'Gathering something tasty','shelter':'Keeping dry','apple':'Investigating an apple','building':'Building something'})[game.wubby.state]||'Out and about');if(game.wubby.state==='doing'&&WUBBY_ACTIVITIES[game.wubby.activity])$('activity').textContent=activityLabel(game.wubby.activity);renderActivities();}
+function ui(){let count=game.board.filter(Boolean).length;renderShop(); $('day').textContent=game.day;$('tileTotal').textContent=count;$('discoveries').textContent=game.discoveries;$('worldProgress').style.width=(100*count/(N*N))+'%';$('worldPercent').textContent=Math.round(count*100/(N*N))+'%';$('foodFill').style.width=game.food+'%';$('foodText').textContent=Math.round(game.food)+'%';$('restFill').style.width=game.energy+'%';$('restText').textContent=Math.round(game.energy)+'%';$('happyFill').style.width=game.happiness+'%';$('mood').textContent=tr(game.happiness>85?'Feeling wonderful':game.happiness>64?'Feeling content':game.happiness>43?'A little unsettled':'Feeling gloomy');$('moodReason').textContent=tr(game.happiness>74?'Life has its little pleasures':game.happiness>43?'Making the best of things':'Missing something special');$('activity').textContent=tr(({'thinking':'Looking around','walking':'Exploring the neighborhood','enjoy':'Enjoying the scenery','eating':'Having a little snack','sleeping':'Asleep in his cottage','collect':'Gathering something tasty','shelter':'Keeping dry','apple':'Investigating an apple','building':'Building something'})[game.wubby.state]||'Out and about');if(game.wubby.state==='doing'&&WUBBY_ACTIVITIES[game.wubby.activity])$('activity').textContent=activityLabel(game.wubby.activity);renderActivities();}
 function available(r,c){const v=game.board[key(r,c)];if(v)return true;return neighbors(r,c).some(([rr,cc])=>!!game.board[key(rr,cc)]);}
 function canBuild(r,c){if(r<0||c<0||r>=N||c>=N)return false;const k=key(r,c);if(k===home)return false;if(Math.round(game.wubby.x)===c&&Math.round(game.wubby.y)===r)return false;return available(r,c);}
 // Grass and paths are the foundation of a cozy village; special features are less frequent.
@@ -1670,7 +1822,7 @@ function updateSaveInfo(){
 function startNewGame(){
  const question=language==='nl'?'Alleen de voortgang van deze 31×31-proef opnieuw beginnen? Je gewone wereld blijft bewaard.':'Reset only this 31×31 test? Your regular world will remain untouched.';
  if(!confirm(question))return;
- game=fresh();initRoads();buildMode='terrain';recenter();hover=null;
+ game=fresh();initializeEconomy();initRoads();buildMode='terrain';recenter();hover=null;
  renderBank();renderDiary();ui();renderActivities();save();
  toast('A fresh little world begins.');
 }
@@ -1682,7 +1834,7 @@ $('shareGameButton').onclick=()=>{
  else if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(()=>toast(language==='nl'?'Link gekopieerd!':'Link copied!')).catch(()=>window.prompt(language==='nl'?'Kopieer de link:':'Copy this link:',url));}
  else window.prompt(language==='nl'?'Kopieer de link:':'Copy this link:',url);
 };
-initRoads();
+initializeEconomy();initRoads();
  // Old saved walking routes may cross intersections that are no longer connected.
  if(game.wubby.state==='walking'){
   game.wubby.x=Math.round(game.wubby.x);game.wubby.y=Math.round(game.wubby.y);
