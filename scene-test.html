@@ -148,7 +148,7 @@ const N=15, HOME=7, TILE_W=112, TILE_H=57, STORE='wubbys-world-real-tile-art-tes
 const C={grass:'#acd987',meadow:'#a7d97b',forest:'#86bf76',orchard:'#b3d883',pond:'#98d6b1',flowers:'#bbd981',garden:'#b8d48c',hill:'#abcfa5',mushroom:'#b1ce84'};
 const LABEL={grass:'Meadow',meadow:'Soft meadow',forest:'Pine forest',orchard:'Apple orchard',pond:'Little pond',flowers:'Flower field',garden:'Veggie garden',hill:'Gentle hill',mushroom:'Mushroom grove'};
 const EMOJI={grass:'🌾',meadow:'🌿',forest:'🌲',orchard:'🍎',pond:'💧',flowers:'🌸',garden:'🥕',hill:'⛰️',mushroom:'🍄'};
-const TILESET=['meadow','forest','orchard','pond','flowers','garden'];
+const TILESET=['meadow','forest','orchard','pond','flowers','garden','hill','mushroom'];
 const WUBBY_ACTIVITIES={"fish":{"tile":"pond","en":"Fishing","nl":"Vissen","say":"Maybe a fish will bite!","sayNl":"Misschien bijt er een visje!","diary":"I spent some time fishing at the pond.","diaryNl":"Ik heb een tijdje bij de vijver zitten vissen.","icon":"🎣","time":7.5},"water":{"tile":"pond","en":"Watching the water","nl":"Naar het water kijken","say":"Look at those ripples!","sayNl":"Kijk die kringetjes!","diary":"I sat by the pond and watched the ripples.","diaryNl":"Ik zat bij de vijver naar het water te kijken.","icon":"💧","time":5},"birds":{"tile":"forest","en":"Listening to birds","nl":"Naar vogels luisteren","say":"Such lovely birdsong!","sayNl":"Wat zingen die vogels mooi!","diary":"I listened to the birds singing among the pine trees.","diaryNl":"Ik luisterde naar de vogels tussen de dennenbomen.","icon":"🐦","time":6},"cones":{"tile":"forest","en":"Collecting pinecones","nl":"Dennenappels verzamelen","say":"This one's a keeper!","sayNl":"Deze neem ik mee!","diary":"I found a beautiful pinecone in the forest.","diaryNl":"Ik vond een prachtige dennenappel in het bos.","icon":"🌲","time":5},"apples":{"tile":"orchard","en":"Picking apples","nl":"Appels plukken","say":"A nice juicy apple!","sayNl":"Een heerlijke sappige appel!","diary":"I picked some apples from the orchard today.","diaryNl":"Vandaag heb ik appels uit de boomgaard geplukt.","icon":"🍎","time":5,"food":15},"rest":{"tile":"orchard","en":"Resting in the shade","nl":"Uitrusten in de schaduw","say":"This is a nice shady spot.","sayNl":"Wat een fijn schaduwplekje.","diary":"I took a little rest beneath the apple trees.","diaryNl":"Ik heb even onder de appelbomen uitgerust.","icon":"🌳","time":7,"energy":8},"flowers":{"tile":"flowers","en":"Smelling flowers","nl":"Aan bloemen ruiken","say":"That smells wonderful!","sayNl":"Wat ruikt dat heerlijk!","diary":"I stopped to smell the colorful flowers.","diaryNl":"Ik ben even gestopt om aan de bloemen te ruiken.","icon":"🌸","time":5},"butterfly":{"tile":"flowers","en":"Watching butterflies","nl":"Vlinders bekijken","say":"Hello little butterfly!","sayNl":"Hallo, kleine vlinder!","diary":"A butterfly danced above the flowers.","diaryNl":"Een vlinder danste boven de bloemen.","icon":"🦋","time":6},"watering":{"tile":"garden","en":"Watering the garden","nl":"De moestuin water geven","say":"Grow, little plants!","sayNl":"Groei maar, plantjes!","diary":"I watered the vegetables in the garden.","diaryNl":"Ik heb de groenten in de moestuin water gegeven.","icon":"💦","time":6},"harvest":{"tile":"garden","en":"Harvesting vegetables","nl":"Groenten oogsten","say":"Something tasty for later!","sayNl":"Iets lekkers voor straks!","diary":"I collected some vegetables from the garden.","diaryNl":"Ik heb groenten uit de moestuin gehaald.","icon":"🥕","time":5,"food":12},"clouds":{"tile":"meadow","en":"Watching clouds","nl":"Wolken kijken","say":"That cloud looks like a bun!","sayNl":"Die wolk lijkt op een broodje!","diary":"I lay in the meadow watching clouds drift by.","diaryNl":"Ik lag in de weide naar de wolken te kijken.","icon":"☁️","time":8,"energy":7},"picnic":{"tile":"meadow","en":"Having a picnic","nl":"Picknicken","say":"Everything tastes better outside!","sayNl":"Buiten smaakt alles lekkerder!","diary":"I had a lovely little picnic in the meadow.","diaryNl":"Ik heb heerlijk in de weide gepicknickt.","icon":"🧺","time":6,"food":8},"daydream":{"tile":"grass","en":"Daydreaming","nl":"Wegdromen","say":"I wonder what is out there...","sayNl":"Wat zou daar te ontdekken zijn...?","diary":"I sat in the grass and let my thoughts wander.","diaryNl":"Ik zat in het gras en liet mijn gedachten afdwalen.","icon":"🌿","time":6},"view":{"tile":"hill","en":"Admiring the view","nl":"Van het uitzicht genieten","say":"What a lovely view!","sayNl":"Wat een prachtig uitzicht!","diary":"I climbed a hill and looked across the land.","diaryNl":"Ik klom op een heuvel en keek uit over het land.","icon":"⛰️","time":6},"fungi":{"tile":"mushroom","en":"Looking at mushrooms","nl":"Paddenstoelen bekijken","say":"Funny little hats!","sayNl":"Wat een grappige hoedjes!","diary":"I discovered a curious patch of mushrooms.","diaryNl":"Ik ontdekte een bijzonder groepje paddenstoelen.","icon":"🍄","time":5}};
 const ACTIVITIES_BY_TILE={};
 for(const [id,a] of Object.entries(WUBBY_ACTIVITIES)){(ACTIVITIES_BY_TILE[a.tile]??=[]).push(id);NL_TEXT[a.say]=a.sayNl;NL_TEXT[a.diary]=a.diaryNl;}
@@ -280,7 +280,7 @@ function renderBank(){$('bank').innerHTML=game.bank.map((t,i)=>`<button type="bu
 function ui(){let count=game.board.filter(Boolean).length; $('day').textContent=game.day;$('tileTotal').textContent=count;$('discoveries').textContent=game.discoveries;$('worldProgress').style.width=(100*count/225)+'%';$('worldPercent').textContent=Math.round(count*100/225)+'%';$('foodFill').style.width=game.food+'%';$('foodText').textContent=Math.round(game.food)+'%';$('restFill').style.width=game.energy+'%';$('restText').textContent=Math.round(game.energy)+'%';$('happyFill').style.width=game.happiness+'%';$('mood').textContent=tr(game.happiness>85?'Feeling wonderful':game.happiness>64?'Feeling content':game.happiness>43?'A little unsettled':'Feeling gloomy');$('moodReason').textContent=tr(game.happiness>74?'Life has its little pleasures':game.happiness>43?'Making the best of things':'Missing something special');$('activity').textContent=tr(({'thinking':'Looking around','walking':'Exploring the neighborhood','enjoy':'Enjoying the scenery','eating':'Having a little snack','sleeping':'Asleep in his cottage','collect':'Gathering something tasty','shelter':'Keeping dry','apple':'Investigating an apple'})[game.wubby.state]||'Out and about');if(game.wubby.state==='doing'&&WUBBY_ACTIVITIES[game.wubby.activity])$('activity').textContent=activityLabel(game.wubby.activity);renderActivities();}
 function available(r,c){const v=game.board[key(r,c)];if(v)return true;return neighbors(r,c).some(([rr,cc])=>!!game.board[key(rr,cc)]);}
 function canBuild(r,c){if(r<0||c<0||r>=N||c>=N)return false;const k=key(r,c);if(k===home)return false;if(Math.round(game.wubby.x)===c&&Math.round(game.wubby.y)===r)return false;return available(r,c);}
-function pickTile(){const count=game.placed;const pool=count<8?['meadow','flowers','orchard','forest','pond','garden']:TILESET;return choose(pool);}
+function pickTile(){const count=game.placed;const pool=count<8?['meadow','flowers','orchard','forest','pond','garden']:count<18?['meadow','flowers','orchard','forest','pond','garden','hill']:TILESET;return choose(pool);}
 function placement(r,c){if(!canBuild(r,c)){toast(game.board[key(r,c)]==='home'?"Wubby's home stays right here.":'Place beside the existing world.');return;}let k=key(r,c),old=game.board[k],tile=game.bank[game.selected];if(old===tile){toast('That landscape is already here.');return;}
  const like=game.favorite;if(old&&game.visited[k]>=2){if(old===like){game.happiness=clamp(game.happiness-18,20,100);speak('My favorite spot...',3);log(`Something feels wrong. The ${LABEL[old].toLowerCase()} I loved has disappeared.`);}else {game.happiness=clamp(game.happiness-3,20,100);}}
  game.board[k]=tile;game.placed++;let dist=Math.abs(r-HOME)+Math.abs(c-HOME);
@@ -885,6 +885,40 @@ function wubbyShape(time,dir,state){
  // subtle head highlights and warm fur texture
  ctx.restore();
 }
+
+function drawActivityEffect(time,x,y,z,k){
+ if(k.state!=='doing'||!k.activity)return;
+ const id=k.activity, wave=Math.sin(time*3),tiny=Math.sin(time*5);
+ ctx.save();ctx.lineCap='round';
+ if(id==='fish'){
+  line(x+8*z,y-13*z,x+27*z,y-34*z,'#9b7651',2.2*z);
+  line(x+27*z,y-34*z,x+32*z,y+3*z,'#e4f3e7',1*z);
+  ellipse(x+32*z,y+3*z,(4+Math.abs(wave)*2)*z,2*z,'#b4e8e9a8');
+ } else if(id==='water'){
+  for(let i=0;i<3;i++){ellipse(x+(17+i*5)*z,y+3*z,(2+i*2+Math.abs(wave))*z,1.4*z,'#bce7ecbc');}
+ } else if(id==='flowers'||id==='butterfly'){
+  for(let i=0;i<2;i++){
+   let xx=x+(12+i*8)*z, yy=y-(18+i*7)*z+Math.sin(time*3+i)*4*z;
+   ellipse(xx-2*z,yy,3*z,2*z,'#efbfdc');ellipse(xx+2*z,yy,3*z,2*z,'#fcf1bd');
+  }
+ } else if(id==='apples'||id==='picnic'||id==='harvest'){
+  ellipse(x+12*z,y-17*z+tiny*z,5*z,5*z,id==='harvest'?'#e4a34f':'#d95f51');
+  line(x+12*z,y-21*z+tiny*z,x+14*z,y-24*z+tiny*z,'#698f55',1.2*z);
+ } else if(id==='watering'){
+  poly([[x+7*z,y-14*z],[x+17*z,y-17*z],[x+15*z,y-7*z],[x+6*z,y-8*z]],'#94aaa0','#607f70',1*z);
+  for(let i=0;i<3;i++)ellipse(x+(20+i*3)*z,y+(-4+i*4+tiny*2)*z,1.5*z,2.5*z,'#85cfe6');
+ } else if(id==='birds'){
+  ctx.fillStyle='#609a7f';ctx.font=(18*z)+'px serif';ctx.textAlign='center';ctx.fillText('♪',x+20*z,y-30*z+wave*2*z);
+ } else if(id==='cones'||id==='fungi'){
+  ellipse(x+13*z,y-13*z,5*z,7*z,'#aa805c');line(x+10*z,y-14*z,x+16*z,y-14*z,'#efd3a3',.7*z);
+ } else if(id==='clouds'||id==='daydream'||id==='rest'){
+  for(let i=0;i<3;i++)ellipse(x+(8+i*6)*z,y-(22+i*5)*z,Math.max(1.3,3-i*.65)*z,2*z,'#fff8dccc');
+ } else if(id==='view'){
+  ctx.font=(18*z)+'px serif';ctx.fillStyle='#f7daa0';ctx.textAlign='center';ctx.fillText('✦',x+21*z,y-27*z+wave*2*z);
+ }
+ ctx.restore();
+}
+
 function wubbyLux(time){
  const k=game.wubby,{x,y}=view(k.y,k.x),walking=k.state==='walking';
  const dir=(Number.isFinite(k.lookFacing)&&k.lookTime>0)?k.lookFacing:(Number.isFinite(k.facing)?k.facing:7);
@@ -892,7 +926,7 @@ function wubbyLux(time){
  const s=zoom*.52;
  shadow(x,y+3*zoom,9*zoom,3.3*zoom,.24);
  ctx.save();ctx.translate(x,y+4*zoom-bob*zoom);ctx.scale(s,s);
- wubbyShape(time,dir,k.state);ctx.restore();
+ wubbyShape(time,dir,k.state);ctx.restore();drawActivityEffect(time,x,y,zoom,k);
  if(k.speechFor>0&&k.speech){ctx.font='bold 12px Trebuchet MS, sans-serif';let translated=tr(k.speech);let tw=Math.min(220,ctx.measureText(translated).width+22),yy=y-53*zoom;
    ctx.fillStyle='#fffdf4fa';ctx.strokeStyle='#cfdcb9';ctx.lineWidth=1.2;
    ctx.beginPath();ctx.roundRect?ctx.roundRect(x-tw/2,yy-25,tw,27,10):ctx.rect(x-tw/2,yy-25,tw,27);ctx.fill();ctx.stroke();
