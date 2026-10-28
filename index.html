@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Wubby's World — Playable Browser Edition</title>
+<title>Wubby's World — v0.4</title>
 <style>
 .preview-banner {background:#fff4db;border:2px solid #d3b77b;padding:15px 17px;margin:0 0 15px;border-radius:14px;color:#694f30;font-size:14px;line-height:1.5}
 .preview-cover {position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,#dbefe4,#eff6d9);color:#456b4d;text-align:center;gap:12px;pointer-events:none}
@@ -78,12 +78,27 @@ h1 {font-family:Georgia,serif;font-size:30px;letter-spacing:-.8px;line-height:1.
 @media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sidebar .panel{margin:0}.world-wrap{height:min(63vh,520px)}.app{padding:13px}.header{margin-bottom:12px}}
 @media(max-width:550px){h1{font-size:25px}.brand-mark{width:48px;height:48px;border-radius:14px}.subtitle{font-size:11px}.header{align-items:flex-start}.status{gap:5px}.status .pill{font-size:10px;padding:7px 8px}.status .pill:nth-child(2){display:none}.layout{gap:10px}.world-wrap{height:min(43vh,370px);min-height:285px;border-radius:18px}.sidebar{grid-template-columns:1fr 1fr;gap:10px}.sidebar .panel{padding:12px}.sidebar .tile-panel{grid-column:span 2}.sidebar .diary-panel{grid-column:span 2}.tile-option{min-height:90px}.panel h2{font-size:14px}.world-hint{font-size:10px}.control-btn{min-width:unset;flex-basis:45%;padding:9px 3px}.wubby-panel{gap:7px}.wubby-avatar{font-size:27px;width:43px;height:45px}.wubby-info b{font-size:13px}.mood-label{font-size:10px}.bars{grid-template-columns:34px 1fr 23px;gap:5px;font-size:9px}.sidebar .power-panel .sub{margin-bottom:9px}}
 @media(max-width:360px){.world-wrap{min-height:265px}.status .pill:first-child{display:none}.world-wrap{min-height:305px}.control-btn{font-size:11px}}
+
+/* Storybook edition polish: parchment cards and comfortable mobile controls. */
+:root{--ink:#385644;--line:#e6e4d2;--cream:#fffcf2;--leaf:#3d7d60;--shadow:0 11px 30px rgba(75,87,48,.13)}
+body{background:radial-gradient(circle at 15% 0%,#fff4df,#f1f8e9 45%,#ecf4eb);}
+.world-wrap{border:4px solid #fdf9e8;box-shadow:0 8px 0 #d9e2ca,0 15px 35px #74846938;border-radius:26px}
+.panel{background:#fffcf2;border:1px solid #e7e2cd;box-shadow:0 5px 18px #70876b17}
+.header h1{color:#426847;font-family:Georgia,serif}
+.brand-mark{background:linear-gradient(135deg,#e6f4d7,#f6e6b7);border:2px solid #d5e5c2;border-radius:19px;}
+.tile-option{background:linear-gradient(170deg,#fffef8,#f4f5e8);border-color:#e3e7cf;box-shadow:0 3px 0 #e4e9d8;}
+.tile-option.selected{border-color:#8eb777;background:#edf6df;box-shadow:0 3px 0 #c7dbad,0 0 0 3px #d5edbd}
+.tile-option .emoji{font-size:36px}
+.world-title{background:#fffdf0e6;border:1px solid #e7ead2;box-shadow:0 3px 15px #395e4330}
+.world-hint{background:#fffdefed;border:1px solid #e5e6ca;color:#60785e}
+@media(max-width:550px){.world-wrap{min-height:330px;height:min(46vh,430px)}.tile-option{min-height:95px}}
+.world-title .face{overflow:hidden;background:#f9e8cc}.world-title .face img{width:100%;height:100%;object-fit:cover;object-position:center 24%;transform:scale(1.6) translateY(4px)}.wubby-avatar{overflow:hidden}.wubby-avatar img{width:98%;height:98%;object-fit:contain;object-position:bottom center}
 </style>
 </head>
 <body>
 <div class="app">
   <header class="header">
-    <div class="brand"><div class="brand-mark" aria-hidden="true">🏡</div><div><h1>Wubby's World</h1><p class="subtitle">His world. Your creation.</p></div></div>
+    <div class="brand"><div class="brand-mark" aria-hidden="true">🌿</div><div><h1>Wubby's World</h1><p class="subtitle">A little life, a world of possibilities.</p></div></div>
     <div class="status"><div class="pill">☀️ Day <strong id="day">1</strong></div><div class="pill">🗺️ <strong id="tileTotal">5</strong> / 225 tiles</div><div class="pill">✨ <strong id="discoveries">1</strong> discovered</div></div>
   </header>
   <div class="preview-banner" role="status" id="previewBanner"><strong>Browser required:</strong> This is an interactive JavaScript game. If you can still see this notice, your current file preview isn't running the game. Download the HTML file, then open it from your phone's Downloads folder using <strong>Chrome</strong> or another full web browser. Don't play it inside the ChatGPT file preview.</div>
@@ -92,7 +107,7 @@ h1 {font-family:Georgia,serif;font-size:30px;letter-spacing:-.8px;line-height:1.
       <div class="world-wrap" id="worldWrap">
         <canvas id="world" aria-label="Interactive isometric map of Wubby's world. Choose a tile below then tap a space beside the existing land."></canvas>
         <div class="preview-cover" id="previewCover"><div class="static-scene">🌳 🏠 🐰</div><strong>Wubby is ready to explore!</strong><p>To see the moving map and play, open this downloaded HTML file in your browser.</p></div>
-        <div class="world-title"><div class="face">🐰</div><div><small>WUBBY IS CURRENTLY</small><b id="activity">Looking around...</b></div></div>
+        <div class="world-title"><div class="face"><img alt="Wubby" src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22100%22%20height%3D%22100%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cellipse%20cx%3D%2220%22%20cy%3D%2253%22%20rx%3D%2214%22%20ry%3D%2233%22%20fill%3D%22%23bd825c%22/%3E%3Cellipse%20cx%3D%2280%22%20cy%3D%2253%22%20rx%3D%2214%22%20ry%3D%2233%22%20fill%3D%22%23bd825c%22/%3E%3Cellipse%20cx%3D%2220%22%20cy%3D%2255%22%20rx%3D%229%22%20ry%3D%2224%22%20fill%3D%22%23eab5a9%22/%3E%3Cellipse%20cx%3D%2280%22%20cy%3D%2255%22%20rx%3D%229%22%20ry%3D%2224%22%20fill%3D%22%23eab5a9%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2250%22%20rx%3D%2232%22%20ry%3D%2230%22%20fill%3D%22%23dba86f%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2255%22%20rx%3D%2227%22%20ry%3D%2224%22%20fill%3D%22%23fff0cd%22/%3E%3Cellipse%20cx%3D%2239%22%20cy%3D%2251%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%23292d27%22/%3E%3Cellipse%20cx%3D%2262%22%20cy%3D%2251%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%23292d27%22/%3E%3Ccircle%20cx%3D%2237%22%20cy%3D%2249%22%20r%3D%222%22%20fill%3D%22white%22/%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2249%22%20r%3D%222%22%20fill%3D%22white%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2266%22%20rx%3D%225%22%20ry%3D%223.5%22%20fill%3D%22%239b715d%22/%3E%3Cpath%20d%3D%22M44%2072%20Q50%2079%2056%2072%22%20stroke%3D%22%239b715d%22%20fill%3D%22none%22%20stroke-width%3D%222%22/%3E%3Cpath%20d%3D%22M30%2080%20Q51%2093%2070%2080%22%20stroke%3D%22%234a8d6d%22%20fill%3D%22none%22%20stroke-width%3D%226%22/%3E%3C/svg%3E" /></div><div><small>WUBBY IS CURRENTLY</small><b id="activity">Looking around...</b></div></div>
         <div class="world-hint" id="hint">Choose a tile below, then tap a glowing space next to the land. Drag to look around.</div>
         <div class="zoom"><button id="zoomOut" title="Zoom out">−</button><button id="zoomIn" title="Zoom in">+</button><button id="recenter" title="Return to Wubby">⌂</button></div>
         <div id="toast" role="status"></div>
@@ -101,7 +116,7 @@ h1 {font-family:Georgia,serif;font-size:30px;letter-spacing:-.8px;line-height:1.
     <aside class="sidebar">
       <section class="panel tile-panel"><h2>Build Wubby's world <span class="running-indicator">● Game running</span></h2><p class="sub">Pick one, then place it on the map. Replacing a beloved spot may upset him!</p><div class="tile-bank" id="bank"></div><div class="tile-count"><span>World filled</span><div class="meter-track"><div class="meter-fill" id="worldProgress" style="width:2%"></div></div><span id="worldPercent">2%</span></div></section>
       <section class="panel power-panel"><h2>Little miracles</h2><p class="sub">Wubby has no idea you're looking after him.</p><div class="sky-controls"><button class="control-btn" id="rain">🌧️ Rain</button><button class="control-btn" id="sun">☀️ Sunshine</button><button class="control-btn primary" id="apple">🍎 Leave an apple</button><button class="control-btn" id="follow">🔍 Find Wubby</button></div></section>
-      <section class="panel status-panel"><h2>Life of Wubby</h2><div class="wubby-panel"><div class="wubby-avatar">🐰</div><div class="wubby-info"><b id="mood">Feeling curious</b><div class="mood-label" id="moodReason">A whole world to discover</div><div class="meter-track"><div class="meter-fill" id="happyFill" style="width:80%"></div></div></div></div><div class="bars"><span>Food</span><div class="meter-track food"><div class="meter-fill" id="foodFill" style="width:75%"></div></div><span id="foodText">75%</span><span>Energy</span><div class="meter-track rest"><div class="meter-fill" id="restFill" style="width:85%"></div></div><span id="restText">85%</span></div></section>
+      <section class="panel status-panel"><h2>Life of Wubby</h2><div class="wubby-panel"><div class="wubby-avatar"><img alt="Wubby" src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22100%22%20height%3D%22100%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cellipse%20cx%3D%2220%22%20cy%3D%2253%22%20rx%3D%2214%22%20ry%3D%2233%22%20fill%3D%22%23bd825c%22/%3E%3Cellipse%20cx%3D%2280%22%20cy%3D%2253%22%20rx%3D%2214%22%20ry%3D%2233%22%20fill%3D%22%23bd825c%22/%3E%3Cellipse%20cx%3D%2220%22%20cy%3D%2255%22%20rx%3D%229%22%20ry%3D%2224%22%20fill%3D%22%23eab5a9%22/%3E%3Cellipse%20cx%3D%2280%22%20cy%3D%2255%22%20rx%3D%229%22%20ry%3D%2224%22%20fill%3D%22%23eab5a9%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2250%22%20rx%3D%2232%22%20ry%3D%2230%22%20fill%3D%22%23dba86f%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2255%22%20rx%3D%2227%22%20ry%3D%2224%22%20fill%3D%22%23fff0cd%22/%3E%3Cellipse%20cx%3D%2239%22%20cy%3D%2251%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%23292d27%22/%3E%3Cellipse%20cx%3D%2262%22%20cy%3D%2251%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%23292d27%22/%3E%3Ccircle%20cx%3D%2237%22%20cy%3D%2249%22%20r%3D%222%22%20fill%3D%22white%22/%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2249%22%20r%3D%222%22%20fill%3D%22white%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2266%22%20rx%3D%225%22%20ry%3D%223.5%22%20fill%3D%22%239b715d%22/%3E%3Cpath%20d%3D%22M44%2072%20Q50%2079%2056%2072%22%20stroke%3D%22%239b715d%22%20fill%3D%22none%22%20stroke-width%3D%222%22/%3E%3Cpath%20d%3D%22M30%2080%20Q51%2093%2070%2080%22%20stroke%3D%22%234a8d6d%22%20fill%3D%22none%22%20stroke-width%3D%226%22/%3E%3C/svg%3E" /></div><div class="wubby-info"><b id="mood">Feeling curious</b><div class="mood-label" id="moodReason">A whole world to discover</div><div class="meter-track"><div class="meter-fill" id="happyFill" style="width:80%"></div></div></div></div><div class="bars"><span>Food</span><div class="meter-track food"><div class="meter-fill" id="foodFill" style="width:75%"></div></div><span id="foodText">75%</span><span>Energy</span><div class="meter-track rest"><div class="meter-fill" id="restFill" style="width:85%"></div></div><span id="restText">85%</span></div></section>
       <section class="panel diary-panel"><h2>📖 Wubby's diary</h2><p class="sub">Thoughts from an ordinary little life.</p><div class="diary" id="diary"></div></section>
     </aside>
   </div>
@@ -113,7 +128,7 @@ h1 {font-family:Georgia,serif;font-size:30px;letter-spacing:-.8px;line-height:1.
 <script>
 (()=>{'use strict';
 const N=15, HOME=7, TILE_W=112, TILE_H=57, STORE='wubbys-world-2026-v1';
-const C={grass:'#a8d489',meadow:'#a8dc8e',forest:'#7cba79',orchard:'#b4d68e',pond:'#86c8b6',flowers:'#bfd898',garden:'#c0d99c',hill:'#c5d7aa',mushroom:'#b0cd8d'};
+const C={grass:'#acd987',meadow:'#a7d97b',forest:'#86bf76',orchard:'#b3d883',pond:'#98d6b1',flowers:'#bbd981',garden:'#b8d48c',hill:'#abcfa5',mushroom:'#b1ce84'};
 const LABEL={grass:'Meadow',meadow:'Soft meadow',forest:'Pine forest',orchard:'Apple orchard',pond:'Little pond',flowers:'Flower field',garden:'Veggie garden',hill:'Gentle hill',mushroom:'Mushroom grove'};
 const EMOJI={grass:'🌾',meadow:'🌿',forest:'🌲',orchard:'🍎',pond:'💧',flowers:'🌸',garden:'🥕',hill:'⛰️',mushroom:'🍄'};
 const TILESET=['meadow','forest','orchard','pond','flowers','garden','hill','mushroom'];
@@ -124,9 +139,12 @@ const clamp=(a,min,max)=>Math.max(min,Math.min(max,a));
 const key=(r,c)=>r*N+c; const pos=k=>({r:Math.floor(k/N),c:k%N});
 const neighbors=(r,c)=>[[r-1,c],[r+1,c],[r,c-1],[r,c+1]].filter(([r,c])=>r>=0&&r<N&&c>=0&&c<N);
 const home=key(HOME,HOME);
-function fresh(){let board=Array(N*N).fill(null);board[home]='home';board[key(7,6)]='grass';board[key(6,7)]='grass';board[key(7,8)]='grass';board[key(8,7)]='grass';return {board,bank:['orchard','flowers','pond'],selected:0,placed:0,day:1,daySeconds:25, happiness:80,food:77,energy:85,visited:{[home]:1},favorite:null,affinity:{},journal:[{day:1,text:'My little house is so cozy. I wonder what lies beyond the garden?'},{day:1,text:'A lovely morning for a walk.'}],wubby:{r:7,c:7,x:7,y:7,from:home,to:home,prog:1,state:'thinking',stateTime:2,speech:'',speechFor:0,goal:null,route:[],lastMemory:''},apples:0,sky:'sun',weatherTimer:0,discoveries:1};}
+function fresh(){let board=Array(N*N).fill(null);board[home]='home';board[key(7,6)]='grass';board[key(6,7)]='grass';board[key(7,8)]='grass';board[key(8,7)]='grass';return {board,bank:['orchard','flowers','pond'],selected:0,placed:0,day:1,daySeconds:25, happiness:80,food:77,energy:85,visited:{[home]:1},favorite:null,affinity:{},journal:[{day:1,text:'My little house is so cozy. I wonder what lies beyond the garden?'},{day:1,text:'A lovely morning for a walk.'}],wubby:{r:7,c:7,x:7,y:7,from:home,to:home,prog:1,state:'thinking',stateTime:2,speech:'',speechFor:0,goal:null,route:[],lastMemory:'',facing:7,lookFacing:null,lookTime:0,blinkTime:0},apples:0,sky:'sun',weatherTimer:0,discoveries:1};}
 let game=fresh();
 try{const saved=JSON.parse(localStorage.getItem(STORE));if(saved&&saved.board?.length===225&&saved.bank?.length===3&&saved.wubby)game={...fresh(),...saved};}catch(e){}
+// Preserve existing worlds while upgrading old character state.
+game.wubby.facing=Number.isFinite(game.wubby.facing)?game.wubby.facing:7;
+game.wubby.lookFacing=null;game.wubby.lookTime=0;game.wubby.blinkTime=0;
 let zoom=1.08,panX=0,panY=35;
 function save(){try{localStorage.setItem(STORE,JSON.stringify(game));}catch(e){}}
 function toast(t){let e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(toaster);toaster=setTimeout(()=>e.classList.remove('show'),2150);}
@@ -219,16 +237,303 @@ function drawWubby(time){let k=game.wubby,{x,y}=view(k.y,k.x);let s=zoom*.82,wal
  ctx.restore();
  if(k.speechFor>0 && k.speech){const size=12;ctx.font='bold 12px Trebuchet MS, sans-serif';let tw=Math.min(180,ctx.measureText(k.speech).width+22),yy=y-70*zoom;ctx.fillStyle='#fffef0f0';ctx.strokeStyle='#dbe2ca';ctx.lineWidth=1;ctx.beginPath();if(ctx.roundRect){ctx.roundRect(x-tw/2,yy-24,tw,25,9);}else{ctx.rect(x-tw/2,yy-24,tw,25);}ctx.fill();ctx.stroke();poly([[x-5,yy+1],[x+5,yy+1],[x,yy+7]],'#fffef0');ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#607b63';ctx.fillText(k.speech,x,yy-11,tw-8);}
 }
+
+// Character art extracted from our Wubby concept design; embedded for offline, single-file play.
+
+
+
+// Visual edition 0.3: Wubby is drawn in eight directions on the game canvas with consistent ears and no raster cut-outs.
+const softGrad=(x,y,r,c1,c2)=>{const g=ctx.createRadialGradient(x-r*.22,y-r*.28,r*.06,x,y,r);g.addColorStop(0,c1);g.addColorStop(1,c2);return g};
+const shadow=(x,y,rx,ry,a=.19)=>ellipse(x,y,rx,ry,`rgba(47,86,49,${a})`);
+function petal(x,y,s,col='#ffe2f1'){
+  line(x,y+2*s,x-1*s,y+6*s,'#59874c',1.5*s);
+  for(let i=0;i<5;i++){const a=i*Math.PI*2/5;ellipse(x+Math.cos(a)*3*s,y+Math.sin(a)*3*s,2.9*s,2.6*s,col);}
+  ellipse(x,y,1.9*s,1.9*s,'#f7c952');
+}
+function pineLux(x,y,s=1){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+  shadow(2,2,17,6,.20);
+  poly([[-3,1],[3,1],[3,-30],[-3,-30]],'#9f7553');
+  for(let j=0;j<3;j++){
+    let yy=-11-j*14,w=20-j*4;
+    poly([[-w,yy],[0,yy-30],[w,yy]],'#2f775d');
+    poly([[-w+2,yy-5],[0,yy-30],[2,yy-2]],j===2?'#84b993':'#609c78');
+    poly([[0,yy-30],[w,yy],[0,yy-6]],j===2?'#34775f':'#286e59');
+    poly([[-w+2,yy-6],[-w-2,yy],[w+2,yy]],null,'#356b52',.8);
+  }
+  ellipse(-7,-36,2.5,1.2,'#d1ead2ad');
+  ctx.restore();
+}
+function leafyLux(x,y,s=1,fruit=false,bloom=false){
+ ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+ shadow(5,4,20,7,.19);
+ poly([[-4,2],[5,2],[5,-29],[-3,-33]],'#9b6548');
+ poly([[-4,0],[0,1],[1,-31],[-3,-33]],'#c18f62');
+ const col=bloom?['#f5c1d6','#f9dbe2','#f0aacb','#f5c8d3']:['#72b76a','#acd46e','#499f68','#8ac66c'];
+ ellipse(-9,-35,20,16,softGrad(-10,-37,21,col[1],col[2]));
+ ellipse(10,-33,19,19,softGrad(8,-36,23,col[1],col[2]));
+ ellipse(0,-47,22,21,softGrad(-6,-53,27,col[1],col[2]));
+ ellipse(-13,-48,13,13,col[0]);ellipse(10,-49,14,15,col[3]);
+ ellipse(-15,-52,7,3,'#edf9bd4f');ellipse(0,-60,11,3,'#e7f9c055');
+ for(let i=0;i<7;i++){let xx=(colorSeed(i*36+x)-.5)*29, yy=-32-(colorSeed(i*66+y)*24);
+  if(fruit){ellipse(xx,yy,3.5,3.5,softGrad(xx-1,yy-1,5,'#ff9b69','#d54348'));line(xx,yy-3,xx+1,yy-5,'#5e7545',.8)}
+  else if(bloom)petal(xx,yy,.55,i%2?'#fff1f4':'#fbe0e6');
+ }
+ ctx.restore();
+}
+function hillLux(x,y){
+  shadow(x,y+5,34,9,.12);
+  poly([[x-36,y+6],[x-17,y-17],[x-6,y-29],[x+19,y-14],[x+36,y+9]],'#699e74');
+  poly([[x-36,y+6],[x-17,y-17],[x-6,y-29],[x+7,y-16],[x-4,y+6]],'#b1d4aa');
+  poly([[x-19,y-14],[x-7,y-27],[x+6,y-17],[x-4,y-20]],'#e9edca');
+  for(let i=0;i<8;i++)grassBlades(x-25+i*7,y+7-i%3*3,.25,2);
+}
+function cottageLux(x,y,s){
+ ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+ shadow(0,10,43,15,.22);
+ // stepping stones and blossoms make the house read as an actual home
+ for(let i=0;i<4;i++){ellipse(-2+i*8,8+i*4,8,3.4,i%2?'#ded2a7':'#e8ddbb');}
+ // cottage's creamy stone walls, two visible facades
+ poly([[-29,-28],[-2,-11],[-2,9],[-29,-6]],'#e9d7a8','#b9a17c',1.2);
+ poly([[-2,-11],[30,-29],[30,-8],[-2,9]],'#f8e6ba','#b9a17c',1.2);
+ // low stones at bottom of walls
+ for(let i=0;i<5;i++){line(-28+i*6,-6+i*3,-24+i*6,-5+i*3,'#cbb88d',.8);}
+ for(let i=0;i<5;i++){line(2+i*5,8-i*3,7+i*5,7-i*3,'#d4c299',.9);}
+ // wooden front door (right wall)
+ poly([[7,4],[19,-3],[19,-24],[7,-16]],'#76513f','#d8bd8a',1.25);
+ poly([[9,3],[17,-2],[17,-21],[9,-16]],'#b67c57');
+ line(12,-16,12,0,'#e6aa77',1);ellipse(15,-8,1.5,1.5,'#ffde79');
+ // warm windows
+ poly([[-20,-12],[-9,-6],[-9,-21],[-20,-26]],'#9d7749','#ead5a2',1);
+ poly([[-18,-14],[-11,-10],[-11,-21],[-18,-24]],'#ffdc88');
+ line(-14,-23,-14,-10,'#cfad69',1);line(-19,-18,-10,-12,'#cfad69',1);
+ poly([[22,-20],[27,-23],[27,-33],[22,-30]],'#ffe399','#a9824e',1);
+ // a larger curved, soft moss-and-thatch roof
+ poly([[-43,-34],[-14,-62],[13,-56],[35,-35],[3,-22]],'#4e8863','#58815b',1.2);
+ poly([[-43,-34],[-14,-62],[3,-22],[-30,-13]],'#74ad67');
+ poly([[-14,-62],[13,-56],[35,-35],[3,-22]],'#447f5f');
+ // roof rim / scalloped green overhang
+ poly([[-43,-34],[-30,-14],[3,-22],[35,-35],[33,-28],[3,-16],[-30,-8],[-43,-28]],'#66985c');
+ poly([[-42,-34],[-14,-61],[4,-24],[-30,-14]],'#90bd69');
+ for(let i=0;i<11;i++){let xx=-35+i*4.4,yy=-34-(i<5?i*4:(10-i)*3);
+  line(xx,yy,xx+5,yy+7,i%2?'#92bb68':'#6aa75e',1.3);}
+ for(let i=0;i<7;i++){let xx=3+i*4.2,yy=-47+i*1.8;line(xx,yy,xx+2,yy+6,'#80ae67',1.2);}
+ // stubby stone chimney rising behind roof
+ poly([[11,-55],[19,-59],[19,-80],[11,-77]],'#b18b70');
+ poly([[19,-59],[25,-55],[25,-78],[19,-80]],'#937260');
+ poly([[9,-79],[19,-84],[27,-79],[18,-75]],'#d5ad81');
+ // flower pots, front garden, lantern
+ ellipse(31,-1,6,3,'#ad704e');poly([[25,-1],[37,-1],[35,6],[27,6]],'#c58661');
+ petal(30,-4,.9,'#ffc5dc');petal(34,-5,.7,'#ffe9aa');
+ ellipse(-34,-4,5,2.5,'#a17d55');petal(-33,-8,.8,'#f1bed7');
+ line(31,-25,33,-28,'#744c39',1.2);ellipse(34,-26,3.5,5,'#ffdb78');
+ // roof moss tuft
+ ellipse(-12,-52,12,4,'#a2c875c4');
+ ctx.restore();
+}
+function sceneLux(type,x,y,s,seed,time){
+ ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+ // environmental micro-textures, consistent across the entire board
+ for(let i=0;i<12;i++){
+   let xx=(colorSeed(seed*19+i*7.2)-.5)*90,yy=(colorSeed(seed*29+i*13.7)-.5)*30;
+   ellipse(xx,yy,.8+colorSeed(seed+i)*1.1,.3,'#eaf6ae7d');
+ }
+ if(type==='home'){
+  ctx.restore();cottageLux(x,y,s);return;
+ }
+ if(type==='grass'||type==='meadow'){
+  for(let i=0;i<21;i++){
+   let xx=(colorSeed(seed*28+i*4.37)-.5)*91,yy=(colorSeed(seed*13+i*8.53)-.5)*36;
+   grassBlades(xx,yy,.28+colorSeed(i*6+seed)*.35,2);
+  }
+  if(type==='meadow')for(let i=0;i<10;i++){
+    const xx=(colorSeed(seed*7+i*5)-.5)*86,yy=(colorSeed(seed*14+i*9)-.5)*29;
+    petal(xx,yy,.55,['#fff5d1','#ffe3ec','#e4defa'][i%3]);
+  }
+ } else if(type==='forest'){
+  pineLux(-25,1,.72);pineLux(5,-2,.97);pineLux(28,8,.6);
+  for(let i=0;i<8;i++)petal(-31+i*8,10+(i%3)*2,.32,'#f9e6d2');
+ }else if(type==='orchard'){
+  leafyLux(-19,-2,.72,true);leafyLux(19,7,.57,true);
+  ellipse(4,9,3.5,2.5,'#d95449');petal(-34,9,.42,'#fff6c4');
+ }else if(type==='pond'){
+  shadow(0,1,44,20,.08);
+  ellipse(0,2,47,21,'#5aa58d');ellipse(0,-1,45,20,'#bfdb94');
+  ellipse(-1,-2,40,17,softGrad(-9,-7,49,'#b6eaf0','#4db6bb'));
+  ellipse(-11,-10,18,5,'#ffffff53');ellipse(7,5,18,3,'#d0ffff32');
+  for(let i=0;i<4;i++){let bx=-30+i*19;line(bx,-5+i%2*6,bx+8,-5+i%2*6,'#d4f5e7aa',1.1);}
+  ellipse(23,3,8,3.5,'#5caa6f');petal(26,0,.55,'#f7d0e5');
+  for(let i=0;i<5;i++){let rx=-40+i*20;line(rx,12,rx-2,4,'#7aab56',.95);line(rx+3,13,rx+3,5,'#6d9c56',1.2);}
+ }else if(type==='flowers'){
+  for(let i=0;i<25;i++){
+   let xx=(colorSeed(seed*43+i*6.72)-.5)*91,yy=(colorSeed(seed*31+i*10.42)-.5)*34;
+   petal(xx,yy,.34+colorSeed(i*27+seed)*.35,['#ffe1f0','#ffe0a6','#f7f3cf','#ded2f3'][i%4]);
+  }
+ }else if(type==='garden'){
+  poly([[-43,1],[-13,-14],[11,-2],[-20,15]],'#9a7656');poly([[1,12],[24,-1],[43,5],[18,20]],'#ad825a');
+  for(let i=0;i<6;i++){
+   let xx=-33+i*6,yy=1-i*1.7;
+   ellipse(xx,yy,4,3,'#74b05f');ellipse(xx-2,yy-3,2,4,'#4d9656');
+   let ax=12+i*4,ay=12-i*1.8;
+   poly([[ax-2,ay],[ax+2,ay],[ax,ay+7]],'#ee9c58');ellipse(ax,ay,3,3,'#77af52');
+  }
+  for(let i=0;i<3;i++)petal(-33+i*32,11,.5,'#fdf5ca');
+ }else if(type==='hill'){
+  ctx.restore();hillLux(x,y);ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+  petal(24,6,.65,'#fce0ec');
+ }else if(type==='mushroom'){
+  leafyLux(-24,0,.5);for(let i=0;i<7;i++){
+   let xx=(colorSeed(seed*22+i*7)-.5)*71,yy=(colorSeed(seed*37+i*12)-.5)*18+5;
+   poly([[xx-2,yy],[xx+3,yy],[xx+2,yy-8],[xx-1,yy-8]],'#f0dfbd');
+   ellipse(xx,yy-8,6,4,i%2?'#e5ab62':'#dc795f');ellipse(xx-2,yy-10,1.3,.9,'#fff5e8');
+  }
+ }
+ // An occasional passing butterfly, as part of the living environment
+ if((seed%7===0||type==='flowers')&&game.sky==='sun'){
+   let fx=26+Math.sin(time*1.8+seed)*5,fy=-17+Math.sin(time*2.7+seed)*3;
+   ellipse(fx-3,fy,3,4,'#ffe59e');ellipse(fx+3,fy,3,4,'#f8cce2');line(fx,fy,fx,fy+4,'#94644b',.8);
+ }
+ ctx.restore();
+}
+function diamondLux(x,y,s,fill,highlight=false){
+ const w=TILE_W*zoom/2,h=TILE_H*zoom/2,d=10*zoom;
+ const top=[[x,y-h],[x+w,y],[x,y+h],[x-w,y]];
+ poly([[x-w,y],[x,y+h],[x,y+h+d],[x-w,y+d]],'#689e6b');
+ poly([[x,y+h],[x+w,y],[x+w,y+d],[x,y+h+d]],'#53885d');
+ const grad=ctx.createLinearGradient(x-w,y-h,x+w,y+h);
+ grad.addColorStop(0,'#c9ec9e');grad.addColorStop(.43,fill);grad.addColorStop(1,'#88c479');
+ poly(top,grad,'#8ab477',.7*zoom);
+ // delicate contour line, subtle clay-like bevel
+ line(x-w+2*zoom,y+1*zoom,x,y+h-2*zoom,'#d4edb676',1.35*zoom);
+ if(highlight){poly(top,'#fff6bc28','#fff4a6',2.6*zoom);}
+}
+function drawTileLux(r,c,type,highlight,time){let {x,y}=view(r,c);diamondLux(x,y,zoom,C[type]||'#b8d39a',highlight);sceneLux(type,x,y,zoom,key(r,c)+1,time);}
+// 8-way physical facing, oriented to the screen: 0 S, 1 SW, 2 W, 3 NW, 4 N, 5 NE, 6 E, 7 SE.
+// Drawing from the same anatomy and palette for every view avoids inconsistent ears and cut-out borders.
+const WUBBY_DIRS=['S','SW','W','NW','N','NE','E','SE'];
+function facingFromScreen(dx,dy){let ang=Math.atan2(-dx,dy);return ((Math.round(ang/(Math.PI/4))%8)+8)%8;}
+function turnTowards(fromX,fromY,toX,toY){let dx=toX-fromX,dy=toY-fromY;return Math.abs(dx)+Math.abs(dy)<.01?null:facingFromScreen(dx,dy);}
+function lookAtTile(k,r,c){const p=view(k.y,k.x),q=view(r,c),f=turnTowards(p.x,p.y,q.x,q.y);if(f!==null){k.facing=f;k.lookFacing=null;k.lookTime=0;}}
+function wubbyShape(time,dir,state){
+ const turn=(dir||0)*Math.PI/4,side=Math.sin(turn),front=Math.cos(turn),ff=Math.max(0,front);
+ const back=Math.max(0,-front),walk=state==='walking',stride=walk?Math.sin(time*12):0;
+ const sway=walk?Math.sin(time*12)*.042:Math.sin(time*1.4)*.022;
+ const blink=state==='sleeping'||(Math.sin(time*1.08+1.2)>.994);
+ // feet and tail are behind the head, but remain visible in all directions
+ const fur=softGrad(-14,-59,81,'#f8daa2','#b87947');
+ const cream=softGrad(-10,-46,63,'#fff5d7','#e6b982');
+ const dark='#644b39';
+ ctx.save();ctx.rotate(sway);
+ // little fluffy tail. Moves behind him in frontal views, peeks around on side views.
+ ellipse(-side*5+front*13,-15,7,7,'#c28d5b');ellipse(-side*5+front*13,-16,5.5,5.5,'#f2d09a');
+ // legs alternately step; visible even when facing away
+ const footX=8*Math.max(.47,Math.abs(front)) ;
+ ellipse(-footX + side*2,-1-(walk?Math.max(0,-stride)*3:0),6.6,4.1,'#a67a55');
+ ellipse(footX + side*2,-1-(walk?Math.max(0,stride)*3:0),6.6,4.1,'#a67a55');
+ // chest/body in the same shape for every angle
+ ellipse(0,-19,16.3,19.4,fur);
+ ellipse(-side*4,-18,11*ff+4.5,13,front>.1?cream:'#cc986c');
+ // satchel always on Wubby's left side, following rotation
+ let bagX=front>=0?14-side*8:-12-side*5;
+ ellipse(bagX,-15,6.4,8.8,'#a9754e');ellipse(bagX,-14,4.6,6.6,'#bd8a5a');
+ line(bagX-2,-19,bagX+3,-19,'#e7bd7d',1.4);
+ // swinging arms/hands
+ ellipse(-14+side*2,-19 + (walk?stride*2.8:0),5.5,9,'#cf9563');
+ ellipse(14+side*2,-19 - (walk?stride*2.8:0),5.5,9,'#c98d5d');
+ ellipse(-14+side*2,-12+(walk?stride*2.8:0),3.7,4,'#f1c695');
+ ellipse(14+side*2,-12-(walk?stride*2.8:0),3.7,4,'#f1c695');
+ // neck scarf: back has visible tied tails; front wraps around the belly
+ if(back>.3){
+   poly([[-12,-30],[11,-30],[10,-25],[-11,-25]],'#5a9573');
+   poly([[1,-27],[6,-26],[10,-14],[4,-13]],'#4d8566');
+ } else {
+   poly([[-12,-30],[7,-29],[12,-25],[2,-23],[-13,-26]],'#609b78');
+   poly([[5,-26],[12,-24],[10,-12],[5,-13]],'#3e805f');
+ }
+ // ears drawn consistently: far ear first, close ear last; both exist in all 8 directions.
+ const hx=side*-2,hy=-48;
+ function ear(x,y,near,offset){
+  ctx.save();ctx.translate(x,y);ctx.rotate(offset + Math.sin(time*(walk?6:1.8)+x*.15)*.045);
+  const eg=softGrad(-8,-12,31,near?'#e7b482':'#dba370','#a8754c');
+  ellipse(0,1,8.5*(near?1:.9),19,eg);
+  if(front>.15)ellipse(0,2,5*(near?1:.85),14,'#e9b4a4');
+  else line(-2,-9,3,8,'#bb865b',1.2);
+  ctx.restore();
+ }
+ // Opposite ears project behind the head when turning, no missing one-ear angle.
+ const leftX=hx-21*Math.abs(front)+side*14;
+ const rightX=hx+21*Math.abs(front)+side*14;
+ const farIsLeft=side>0;
+ ear(farIsLeft?leftX:rightX,hy+7,false,farIsLeft?-.30:.30);
+ // broad head with fur-edge and consistent crown tuft
+ const headGrad=softGrad(-13,-57,56,'#f9dba7','#c18a58');
+ ellipse(hx,hy,22.5,22,headGrad);
+ for(let j=0;j<17;j++){
+   const a=j*Math.PI*2/17;
+   if(a>Math.PI*.17&&a<Math.PI*.84)continue;
+   let xx=hx+Math.cos(a)*21,yy=hy+Math.sin(a)*20;
+   line(xx,yy,xx+Math.cos(a)*2.5,yy+Math.sin(a)*2.2,j%3===0?'#e9bd87':'#d7a36e',.65);
+ }
+ poly([[hx-7,hy-20],[hx-3,hy-29],[hx+1,hy-23],[hx+6,hy-28],[hx+4,hy-20]],'#cc965d');
+ if(front>-.13){
+   // Face projects to the direction of travel; 3/4 and side poses show fewer features.
+   const fx=hx-side*9,fw=16.5*Math.max(.5,ff),fy=hy+1;
+   ellipse(fx,fy,fw,16.5,cream);
+   let mouthX=fx-side*5;
+   if(ff>.57){
+     const span=8.2*ff;
+     for(const n of [-1,1]){
+       let ex=fx+n*span-side*3;
+       if(blink)line(ex-2,hy-3,ex+2,hy-3,dark,1.4);
+       else {ellipse(ex,hy-3,3.45,4.35,'#272b28');ellipse(ex-1,hy-5.2,1.2,1.45,'#ffffff');}
+     }
+     ellipse(fx-12*ff,hy+7,4.5,2.3,'#edaaa3a0');
+     ellipse(fx+12*ff,hy+7,4.5,2.3,'#edaaa3a0');
+   }else{
+     // only the nearer eye is seen at a true side view
+     const eyeX=fx-side*4;
+     if(blink)line(eyeX-1.5,hy-3,eyeX+2.5,hy-3,dark,1.5);
+     else {ellipse(eyeX,hy-4,3.5,4.4,'#272b28');ellipse(eyeX-1,hy-6,1.2,1.5,'#ffffff');}
+   }
+   ellipse(mouthX,hy+6,3.65,2.7,'#8e6455');
+   if(state!=='sleeping'){
+     line(mouthX-2,hy+10,mouthX,hy+11.5,'#8d6857',1);
+     line(mouthX,hy+11.5,mouthX+2,hy+10,'#8d6857',1);
+   }
+ }else{
+   // back of Wubby's head: a little fur swirl, not a face pasted toward the viewer
+   ctx.strokeStyle='#dfae7d';ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(hx-3,hy-3,8,-.1,Math.PI*1.25);ctx.stroke();
+   ellipse(hx+3,hy+2,2,2,'#d8a473');
+ }
+ // near ear overlays the rim of the head; intentional, natural depth.
+ ear(farIsLeft?rightX:leftX,hy+7,true,farIsLeft?.30:-.30);
+ // subtle head highlights and warm fur texture
+ ctx.restore();
+}
+function wubbyLux(time){
+ const k=game.wubby,{x,y}=view(k.y,k.x),walking=k.state==='walking';
+ const dir=(Number.isFinite(k.lookFacing)&&k.lookTime>0)?k.lookFacing:(Number.isFinite(k.facing)?k.facing:7);
+ const bob=walking?Math.abs(Math.sin(time*12))*2.5:Math.sin(time*1.5)*.5;
+ const s=zoom*.93;
+ shadow(x,y+4*zoom,17*zoom,5.5*zoom,.25);
+ ctx.save();ctx.translate(x,y+4*zoom-bob*zoom);ctx.scale(s,s);
+ wubbyShape(time,dir,k.state);ctx.restore();
+ if(k.speechFor>0&&k.speech){ctx.font='bold 12px Trebuchet MS, sans-serif';let tw=Math.min(184,ctx.measureText(k.speech).width+22),yy=y-88*zoom;
+   ctx.fillStyle='#fffdf4fa';ctx.strokeStyle='#cfdcb9';ctx.lineWidth=1.2;
+   ctx.beginPath();ctx.roundRect?ctx.roundRect(x-tw/2,yy-25,tw,27,10):ctx.rect(x-tw/2,yy-25,tw,27);ctx.fill();ctx.stroke();
+   poly([[x-4,yy+1],[x+4,yy+1],[x,yy+7]],'#fffdf4');ctx.fillStyle='#536e59';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(k.speech,x,yy-12,tw-9);
+ }
+}
 function draw(time){ctx.clearRect(0,0,width,height);
- let bg=ctx.createLinearGradient(0,0,0,height);bg.addColorStop(0,'#d4eee7');bg.addColorStop(1,'#eaf3da');ctx.fillStyle=bg;ctx.fillRect(0,0,width,height);
+ let bg=ctx.createLinearGradient(0,0,0,height);bg.addColorStop(0,'#c9e7df');bg.addColorStop(.65,'#e5f3de');bg.addColorStop(1,'#fcf0d4');ctx.fillStyle=bg;ctx.fillRect(0,0,width,height);
  // ambient sparkles floating beyond the miniature world
  for(let i=0;i<31;i++){let x=((colorSeed(i*54)*width+time*(i%3+1)*2)%(width+25)),y=colorSeed(i*99)*height;ellipse(x,y,1.5,1.5,'#ffffff8c');}
  const visible=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){let {x,y}=view(r,c);if(x<-110||x>width+110||y<-110||y>height+110)continue;const type=game.board[key(r,c)];if(type)visible.push([r,c,type]);else if(available(r,c))drawPlaceholder(r,c);}
- visible.sort((a,b)=>(a[0]+a[1])-(b[0]+b[1]));for(const [r,c,t] of visible)drawTile(r,c,t,hover?.r===r&&hover?.c===c);
- if(hover&&canBuild(hover.r,hover.c)){let {x,y}=view(hover.r,hover.c),t=game.bank[game.selected];ctx.globalAlpha=.53;diamond(x,y,zoom,'#e4f4b5',true);scene(t,x,y,zoom,key(hover.r,hover.c)+1);ctx.globalAlpha=1;}
+ visible.sort((a,b)=>(a[0]+a[1])-(b[0]+b[1]));for(const [r,c,t] of visible)drawTileLux(r,c,t,hover?.r===r&&hover?.c===c,time);
+ if(hover&&canBuild(hover.r,hover.c)){let {x,y}=view(hover.r,hover.c),t=game.bank[game.selected];ctx.globalAlpha=.53;diamondLux(x,y,zoom,'#d5f4bb',true);sceneLux(t,x,y,zoom,key(hover.r,hover.c)+1,time);ctx.globalAlpha=1;}
  // small apple gift appears in the vicinity of Wubby
  if(game.apples){let {x,y}=view(game.wubby.y,game.wubby.x);ellipse(x+19*zoom,y+3*zoom,4.2*zoom,4*zoom,'#de5d48');line(x+20*zoom,y-.5*zoom,x+21*zoom,y-5*zoom,'#688f56',1.5*zoom);}
- drawWubby(time);
+ wubbyLux(time);
  if(game.sky==='rain'){
    ctx.fillStyle='#6985a11e';ctx.fillRect(0,0,width,height);for(let d of rainDrops){line(d.x,d.y,d.x-4,d.y+13,'#a5d2dabc',1.3);d.y+=d.speed;if(d.y>height){d.y=-20;d.x=rand(0,width)}}
  }
@@ -246,9 +551,18 @@ function decide(){let k=game.wubby,where=key(Math.round(k.y),Math.round(k.x));if
  head(target,'enjoy');
 }
 function head(target,reason){let k=game.wubby,here=key(Math.round(k.y),Math.round(k.x)),route=shortest(here,target);k.goal=target;k.intent=reason;k.route=route;if(!route.length){if(here===target)arrive();else rest('thinking',1.4);return;}step();}
-function step(){let k=game.wubby;k.from=key(Math.round(k.y),Math.round(k.x));k.to=k.route.shift();k.prog=0;k.state='walking';}
+function step(){let k=game.wubby;k.from=key(Math.round(k.y),Math.round(k.x));k.to=k.route.shift();
+ const a=pos(k.from),b=pos(k.to),dx=(b.c-a.c)-(b.r-a.r),dy=(b.c-a.c)+(b.r-a.r);
+ k.facing=facingFromScreen(dx,dy*.5);k.lookFacing=null;k.lookTime=0;
+ k.prog=0;k.state='walking';}
+
 function rest(state,time){let k=game.wubby;k.state=state;k.stateTime=time;}
-function arrive(){let k=game.wubby,tile=game.board[k.goal],p=k.goal;if(k.intent==='sleeping'){
+function arrive(){let k=game.wubby,tile=game.board[k.goal],p=k.goal;
+  // Turn toward a nearby environmental feature, or the cottage when coming home.
+  if(k.intent==='sleeping'||k.intent==='eating'||k.intent==='shelter') {k.facing=3;}
+  else if(k.intent==='collect') {k.facing=5;}
+  else if(k.intent==='enjoy'){ k.facing=(p*7+game.day*3)%8; }
+  if(k.intent==='sleeping'){
    rest('sleeping',8);speak('Zzz...',4);if(Math.random()<.3)log('Nothing beats my own little bed after a long walk.');return;
  }if(k.intent==='eating'){
    game.food=clamp(game.food+52,0,100);rest('eating',3.1);speak('Mmm, breakfast!',3);log('A nice snack at home. I always keep something in the cupboard.');return;
@@ -267,6 +581,11 @@ function arrive(){let k=game.wubby,tile=game.board[k.goal],p=k.goal;if(k.intent=
 function update(dt){let k=game.wubby;game.daySeconds+=dt; if(game.daySeconds>=120){game.daySeconds-=120;game.day++;if(game.day%3===0)log('Another day in this curious little world. I wonder what I might find next.');save();}
  if(game.sky==='rain'){game.weatherTimer-=dt;if(game.weatherTimer<=0){game.sky='sun';toast('The clouds drifted away.');}}
  k.speechFor=Math.max(0,k.speechFor-dt);
+  if(k.state!=='walking'&&k.state!=='sleeping'){
+    if(k.lookTime>0){k.lookTime-=dt;if(k.lookTime<=0)k.lookFacing=null;}
+    else if(Math.random()<dt*.065){k.lookFacing=(k.facing+(Math.random()<.5?1:7))%8;k.lookTime=1.1+Math.random()*1.8;}
+  } else {k.lookFacing=null;k.lookTime=0;}
+
  game.food=clamp(game.food-dt*(k.state==='sleeping'?.045:.19),0,100);
  if(k.state!=='sleeping')game.energy=clamp(game.energy-dt*(k.state==='walking'?.24:.16),0,100);
  if(k.state==='walking'){
