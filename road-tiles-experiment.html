@@ -226,6 +226,7 @@ function tr(value){
 }
 function trTileName(name){return NL_TEXT[name]||Object.entries(NL_TEXT).find(([k])=>k.toLowerCase()===name.toLowerCase())?.[1]?.toLowerCase()||name;}
 Object.assign(NL_TEXT,{"Ancient stone circle":"Oude steencirkel","Abandoned ruins":"Verlaten ruïne","Hidden cave":"Verborgen grot","Mysterious monument":"Mysterieus monument","Old wishing well":"Verlaten put","New landmark unlocked!":"Nieuwe bijzondere plek vrijgespeeld!"});
+Object.assign(NL_TEXT,{"An ancient circle of stones! Who left it here?":"Een oude steencirkel! Wie heeft die hier achtergelaten?","These old ruins must have a story.":"Deze ruïnes hebben vast een verhaal.","A hidden cave! I wonder what is inside.":"Een verborgen grot! Wat zou erin zitten?","What a mysterious monument!":"Wat een mysterieus monument!"});
 const ORIGINAL_UI_TEXT=[];
 const walker=document.createTreeWalker(document.querySelector('.app'),NodeFilter.SHOW_TEXT);
 for(let node;node=walker.nextNode();){let value=node.nodeValue,trim=value.trim();if(trim&&Object.prototype.hasOwnProperty.call(NL_TEXT,trim))ORIGINAL_UI_TEXT.push([node,value]);}
@@ -1073,6 +1074,59 @@ function storyCottage(){
   storyEllipse(x,y,4,1.7,i%2?'#8db66a':'#6e9f5e');
  }
 }
+
+// All four newly unlocked landmarks are drawn on the same shared isometric base.
+function storyLandmark(type,seed){
+ storyEllipse(0,9,36,10,'#516f5360');
+ if(type==='stonecircle'){
+  // Weathered upright monoliths around a quiet, ancient clearing.
+  storyEllipse(0,2,30,12,'#8b9e8366');
+  for(let j=0;j<7;j++){
+   let angle=j*Math.PI*2/7,xx=Math.cos(angle)*29,yy=Math.sin(angle)*13+1;
+   let ht=17+(j%3)*5;
+   storyPath([[xx-5,yy+2],[xx-5,yy-ht],[xx+2,yy-ht-5],[xx+6,yy-ht+1],[xx+6,yy+3]],
+    j%2?'#87988c':'#abb1a1','#6d8178',.9);
+   storyPath([[xx-5,yy-ht],[xx+2,yy-ht-5],[xx+6,yy-ht+1],[xx-1,yy-ht+4]],'#cad1be');
+   storyStroke([[xx-3,yy-4],[xx,yy-8]],'#a4c5a5',1.3);
+  }
+  storyEllipse(0,-2,7.5,3,'#e8dfb780');
+  storyFlower(-35,8,.48,'#efe2f4');
+ }else if(type==='ruins'){
+  storyPath([[-40,6],[-21,-7],[19,-5],[39,12],[5,18]],'#a9ad98','#7e8e84',1.2);
+  for(const [xx,yy,height] of [[-24,2,41],[21,4,45]]){
+   storyPath([[xx-7,yy],[xx-7,yy-height],[xx+5,yy-height-2],[xx+7,yy]],'#a6a99c','#778b85',1);
+   storyPath([[xx-7,yy-height],[xx-2,yy-height-6],[xx+7,yy-height-3],[xx+5,yy-height-2]],'#d4d1bb');
+   storyStroke([[xx-3,yy-13],[xx+2,yy-9]],'#718d76',1.7);
+  }
+  storyPath([[-30,-31],[-18,-43],[14,-45],[30,-32],[27,-25],[13,-36],[-17,-34]],'#bfc2b2','#81978b',1.1);
+  storyStone(-39,13,.6);storyStone(33,10,.55);storyFlower(4,15,.48,'#f4d9ee');
+ }else if(type==='cave'){
+  storyPath([[-46,11],[-35,-13],[-18,-31],[3,-46],[25,-32],[43,-11],[47,13]],'#899a90','#526a65',1.6);
+  storyPath([[-33,-9],[-18,-31],[3,-46],[10,-21],[-3,-19]],'#c9d0bf');
+  storyPath([[9,-19],[25,-32],[43,-11],[47,13],[20,11]],'#728981');
+  storyEllipse(1,6,24,15,'#384e51');
+  storyEllipse(0,4,17,12,'#172e36');
+  storyEllipse(-4,5,7,8,'#0e232b');
+  storyPath([[-33,11],[-11,17],[25,15],[44,11],[15,23],[-22,21]],'#b3b49c');
+  storyFlower(-36,14,.5,'#e8cbe4');
+ }else if(type==='shrine'){
+  storyEllipse(0,6,26,9,'#778d8c');
+  for(let j=2;j>=0;j--){
+   let wid=29-j*5,cy=8-j*7;
+   storyPath([[-wid,cy],[-wid,-3-j*7],[wid,-3-j*7],[wid,cy]],j%2?'#a7b6aa':'#9cac9f','#697f7e',.8);
+  }
+  storyPath([[-11,-13],[-10,-52],[0,-63],[10,-52],[11,-13]],'#aab7ae','#6c8984',1.3);
+  storyPath([[-10,-52],[0,-63],[0,-20],[-10,-13]],'#d8dec5');
+  storyPath([[0,-63],[10,-52],[11,-13],[0,-20]],'#849b95');
+  storyEllipse(0,-43,5.5,8,'#a4d5d0','#e3f7df',.8);
+  storyEllipse(0,-43,2.6,4.5,'#ecf9d9');
+  for(let i=0;i<8;i++){
+   let a=i*Math.PI/4;storyEllipse(Math.cos(a)*18,Math.sin(a)*9+1,2.1,1.3,'#c6e5cf82');
+  }
+  storyFlower(35,12,.5,'#f9e8c9');
+ }
+}
+
 function sceneStory(type,x,y,s,seed,time){
  ctx.save();ctx.translate(x,y);ctx.scale(s,s);
  storyGrass(seed,type==='forest'?18:38);
@@ -1174,6 +1228,8 @@ function sceneStory(type,x,y,s,seed,time){
    for(let j=0;j<10;j++){const a=j*Math.PI/5;storyEllipse(xx+Math.cos(a)*7,yy-tall+Math.sin(a)*7,5,2.7,'#efbb45',a);}
    storyEllipse(xx,yy-tall,5.2,5,'#9a6740');storyEllipse(xx-1.2,yy-tall-1,2,1.7,'#b28a52');
   }
+ }else if(landmark(type)&&type!=='well'){
+  storyLandmark(type,seed);
  }else if(type==='well'){
   storyEllipse(0,9,30,9,'#6e7e6650');
   storyPath([[-20,3],[-10,-2],[10,-2],[20,3],[20,15],[10,20],[-10,20],[-20,15]],'#aea798','#847c70',1.3);
