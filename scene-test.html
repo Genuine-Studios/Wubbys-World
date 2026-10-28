@@ -237,10 +237,47 @@ function save(){try{localStorage.setItem(STORE,JSON.stringify(game));}catch(e){}
 function toast(t){let e=$('toast');e.textContent=tr(t);e.classList.add('show');clearTimeout(toaster);toaster=setTimeout(()=>e.classList.remove('show'),2150);}
 function log(text){if(game.journal[0]?.text===text)return;game.journal.unshift({day:game.day,text});game.journal=game.journal.slice(0,55);renderDiary();save();}
 function speak(s,time=3){game.wubby.speech=s;game.wubby.speechFor=time;}
+
+function renderActivities(){
+ const count=Object.keys(game.activityCounts).filter(id=>game.activityCounts[id]>0&&WUBBY_ACTIVITIES[id]).length;
+ $('activityHeading').textContent=language==='nl'?'🌱 Wubby’s belevenissen':'🌱 Wubby’s adventures';
+ $('activitySub').textContent=language==='nl'?'Wubby bedenkt zelf wat hij in jouw wereld doet.':'Wubby finds his own things to do in your world.';
+ $('activityCount').textContent=language==='nl'?(count+' van '+Object.keys(WUBBY_ACTIVITIES).length+' activiteiten ontdekt'):(count+' of '+Object.keys(WUBBY_ACTIVITIES).length+' activities discovered');
+ const recent=game.activityMoments.slice(0,4);
+ $('activityList').innerHTML=recent.length?recent.map(m=>{
+  const a=WUBBY_ACTIVITIES[m.id];if(!a)return '';
+  return '<div class="activity-item"><span>'+a.icon+'</span><div><strong>'+escapeHTML(activityLabel(m.id))+'</strong><small>'+tr('DAY')+' '+m.day+'</small></div></div>';
+ }).join(''):'<div class="activity-item">🌿 '+(language==='nl'?'Plaats meer tegels om Wubby op ontdekking te zien gaan.':'Place some tiles to see Wubby explore.')+'</div>';
+}
+function recordActivity(id,place){
+ const a=WUBBY_ACTIVITIES[id];if(!a)return;
+ const total=(game.activityCounts[id]||0)+1;
+ game.activityCounts[id]=total;
+ game.activityMoments.unshift({id:id,day:game.day,place:place});
+ game.activityMoments=game.activityMoments.slice(0,20);
+ game.happiness=clamp(game.happiness+2.4,10,100);
+ if(a.food)game.food=clamp(game.food+a.food,0,100);
+ if(a.energy)game.energy=clamp(game.energy+a.energy,0,100);
+ if(total===1||total===5)log(a.diary);
+ renderActivities();save();
+}
+function performActivity(tile,place){
+ const options=ACTIVITIES_BY_TILE[tile]||[];
+ if(options.length===0)return false;
+ const novel=options.filter(id=>!game.activityCounts[id]);
+ const chosen=novel.length&&Math.random()<.75?choose(novel):choose(options);
+ const a=WUBBY_ACTIVITIES[chosen];
+ game.wubby.activity=chosen;
+ rest('doing',a.time);
+ speak(a.say,Math.min(4,a.time));
+ recordActivity(chosen,place);
+ return true;
+}
+
 function renderDiary(){$('diary').innerHTML=game.journal.slice(0,14).map(e=>`<div class="entry"><small>${tr('DAY')} ${e.day}</small><p>${escapeHTML(tr(e.text))}</p></div>`).join('');}
 function escapeHTML(s){return String(s).replace(/[&<>\"]/g,t=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[t]));}
 function renderBank(){$('bank').innerHTML=game.bank.map((t,i)=>`<button type="button" class="tile-option ${game.selected===i?'selected':''}" data-i="${i}" aria-pressed="${game.selected===i}"><span class="emoji">${ART_DATA[t]?`<img src="${ART_DATA[t]}" alt="" style="width:64px;height:52px;object-fit:contain">`:EMOJI[t]}</span><span class="name">${tr(LABEL[t])}</span></button>`).join('');$('bank').querySelectorAll('button').forEach(b=>b.onclick=()=>{game.selected=Number(b.dataset.i);renderBank();});}
-function ui(){let count=game.board.filter(Boolean).length; $('day').textContent=game.day;$('tileTotal').textContent=count;$('discoveries').textContent=game.discoveries;$('worldProgress').style.width=(100*count/225)+'%';$('worldPercent').textContent=Math.round(count*100/225)+'%';$('foodFill').style.width=game.food+'%';$('foodText').textContent=Math.round(game.food)+'%';$('restFill').style.width=game.energy+'%';$('restText').textContent=Math.round(game.energy)+'%';$('happyFill').style.width=game.happiness+'%';$('mood').textContent=tr(game.happiness>85?'Feeling wonderful':game.happiness>64?'Feeling content':game.happiness>43?'A little unsettled':'Feeling gloomy');$('moodReason').textContent=tr(game.happiness>74?'Life has its little pleasures':game.happiness>43?'Making the best of things':'Missing something special');$('activity').textContent=tr(({'thinking':'Looking around','walking':'Exploring the neighborhood','enjoy':'Enjoying the scenery','eating':'Having a little snack','sleeping':'Asleep in his cottage','collect':'Gathering something tasty','shelter':'Keeping dry','apple':'Investigating an apple'})[game.wubby.state]||'Out and about');}
+function ui(){let count=game.board.filter(Boolean).length; $('day').textContent=game.day;$('tileTotal').textContent=count;$('discoveries').textContent=game.discoveries;$('worldProgress').style.width=(100*count/225)+'%';$('worldPercent').textContent=Math.round(count*100/225)+'%';$('foodFill').style.width=game.food+'%';$('foodText').textContent=Math.round(game.food)+'%';$('restFill').style.width=game.energy+'%';$('restText').textContent=Math.round(game.energy)+'%';$('happyFill').style.width=game.happiness+'%';$('mood').textContent=tr(game.happiness>85?'Feeling wonderful':game.happiness>64?'Feeling content':game.happiness>43?'A little unsettled':'Feeling gloomy');$('moodReason').textContent=tr(game.happiness>74?'Life has its little pleasures':game.happiness>43?'Making the best of things':'Missing something special');$('activity').textContent=tr(({'thinking':'Looking around','walking':'Exploring the neighborhood','enjoy':'Enjoying the scenery','eating':'Having a little snack','sleeping':'Asleep in his cottage','collect':'Gathering something tasty','shelter':'Keeping dry','apple':'Investigating an apple'})[game.wubby.state]||'Out and about');if(game.wubby.state==='doing'&&WUBBY_ACTIVITIES[game.wubby.activity])$('activity').textContent=activityLabel(game.wubby.activity);renderActivities();}
 function available(r,c){const v=game.board[key(r,c)];if(v)return true;return neighbors(r,c).some(([rr,cc])=>!!game.board[key(rr,cc)]);}
 function canBuild(r,c){if(r<0||c<0||r>=N||c>=N)return false;const k=key(r,c);if(k===home)return false;if(Math.round(game.wubby.x)===c&&Math.round(game.wubby.y)===r)return false;return available(r,c);}
 function pickTile(){const count=game.placed;const pool=count<8?['meadow','flowers','orchard','forest','pond','garden']:TILESET;return choose(pool);}
@@ -878,14 +915,15 @@ function draw(time){ctx.clearRect(0,0,width,height);
  let shade=game.daySeconds>88?Math.sin((game.daySeconds-88)/32*Math.PI)*.15:0;if(shade){ctx.fillStyle=`rgba(60,71,111,${shade})`;ctx.fillRect(0,0,width,height)}
 }
 function shortest(start,target){if(start===target)return[];let prev=new Map([[start,-1]]),q=[start];for(let i=0;i<q.length;i++){let k=q[i],{r,c}=pos(k);for(let [rr,cc] of neighbors(r,c)){let nk=key(rr,cc);if(!game.board[nk]||prev.has(nk))continue;prev.set(nk,k);q.push(nk);if(nk===target){let path=[],p=nk;while(p!==start){path.unshift(p);p=prev.get(p);}return path;}}}return[];}
-function decide(){let k=game.wubby,where=key(Math.round(k.y),Math.round(k.x));if(!game.board[where])where=home;
+function decide(){let k=game.wubby,where=key(Math.round(k.y),Math.round(k.x));k.activity=null;if(!game.board[where])where=home;
  if(game.energy<24){head(home,'sleeping');return;}
  if(game.food<35){let foods=game.board.map((t,i)=>(['orchard','garden','mushroom'].includes(t)?i:-1)).filter(i=>i>=0);if(foods.length){foods.sort((a,b)=>shortest(where,a).length-shortest(where,b).length);head(foods[0],'collect');}else head(home,'eating');return;}
  if(game.sky==='rain'&&Math.random()<.55){head(home,'shelter');return;}
- let possible=game.board.map((t,i)=>t?i:-1).filter(i=>i>=0&&i!==where);
+ let possible=game.board.map((t,i)=>t?i:-1).filter(i=>i>=0&&i!==where&&shortest(where,i).length>0);
  if(!possible.length){rest('thinking',2);return;}
  let unexplored=possible.filter(i=>!game.visited[i]);let favorite=possible.filter(i=>game.board[i]===game.favorite);
- let target=unexplored.length&&Math.random()<.62?choose(unexplored):favorite.length&&Math.random()<.42?choose(favorite):choose(possible);
+ let newActivities=possible.filter(i=>(ACTIVITIES_BY_TILE[game.board[i]]||[]).some(id=>!game.activityCounts[id]));
+ let target=unexplored.length&&Math.random()<.46?choose(unexplored):newActivities.length&&Math.random()<.64?choose(newActivities):favorite.length&&Math.random()<.52?choose(favorite):choose(possible);
  head(target,'enjoy');
 }
 function head(target,reason){let k=game.wubby,here=key(Math.round(k.y),Math.round(k.x)),route=shortest(here,target);k.goal=target;k.intent=reason;k.route=route;if(!route.length){if(here===target)arrive();else rest('thinking',1.4);return;}step();}
@@ -915,6 +953,7 @@ function arrive(){let k=game.wubby,tile=game.board[k.goal],p=k.goal;
  }
  if(tile==='pond'){speak('So peaceful...',2.3);game.happiness=clamp(game.happiness+1,0,100);}
  if(tile==='flowers'){game.happiness=clamp(game.happiness+1,0,100)}
+ if(k.intent==='enjoy')performActivity(tile,p);
 }
 function update(dt){let k=game.wubby;game.daySeconds+=dt; if(game.daySeconds>=120){game.daySeconds-=120;game.day++;if(game.day%3===0)log('Another day in this curious little world. I wonder what I might find next.');save();}
  if(game.sky==='rain'){game.weatherTimer-=dt;if(game.weatherTimer<=0){game.sky='sun';toast('The clouds drifted away.');}}
@@ -948,7 +987,7 @@ $('rain').onclick=()=>{game.sky='rain';game.weatherTimer=19;rainDrops=Array.from
 $('sun').onclick=()=>{game.sky='sun';game.weatherTimer=0;toast('The sun comes out.');speak('What lovely sunshine.',2.5);save();};
 $('apple').onclick=()=>{game.apples=Math.min(4,game.apples+1);toast('A little apple has appeared near Wubby.');save();};
 $('reset').onclick=()=>{if(!confirm(tr('Start a new world? Your current land and Wubby’s diary will be replaced.')))return;game=fresh();recenter();renderBank();renderDiary();ui();save();toast('A fresh little world begins.');};
-renderBank();renderDiary();ui();setLanguage();document.body.classList.add('game-ready');rainDrops=Array.from({length:90},()=>({x:rand(0,width),y:rand(0,height),speed:rand(3,10)}));requestAnimationFrame(frame);
+renderBank();renderDiary();ui();setLanguage();renderActivities();document.body.classList.add('game-ready');rainDrops=Array.from({length:90},()=>({x:rand(0,width),y:rand(0,height),speed:rand(3,10)}));requestAnimationFrame(frame);
 setInterval(save,8000);
 })();
 </script>
