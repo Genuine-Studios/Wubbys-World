@@ -844,9 +844,7 @@ function scene(type,x,y,s,seed){
   } else if(type==='grass'||type==='meadow'){
     for(let i=0;i<6;i++){let xx=(colorSeed(seed*15+i*3.9)-.5)*65, yy=(colorSeed(seed*7+i*5.2)-.5)*22;grassBlades(xx,yy,.65,2)}
     if(type==='meadow')for(let i=0;i<5;i++)drawFlower((colorSeed(seed*9+i*11)-.5)*61,(colorSeed(seed*4+i*13)-.5)*23,.55,['#f8cad6','#fbf3bc','#ffffff'][Math.floor(colorSeed(seed*13+i*17)*3)]);
-  }else if(NORMAL_NAMES.includes(type)){
-  storyNewTerrain(type,seed,time);
- }else if(type==='forest'){
+  }else if(type==='forest'){
     drawPine(-15,-2,.9);drawPine(15,1,.8);drawPine(3,-4,.62);
   }else if(type==='orchard'){
     drawTree(-13,-1,.8,true);drawTree(19,3,.64,true);ellipse(3,4,3,2.3,'#e9684b');
@@ -1550,6 +1548,8 @@ function sceneStory(type,x,y,s,seed,time){
    else if(i%4===0)storyFlower(x,y,.43,'#fff5d2');
   }
   if(seed%4===0)storyStone(19,-2,.44);
+ }else if(NORMAL_NAMES.includes(type)){
+  storyNewTerrain(type,seed,time);
  }else if(type==='forest'){
   storyPine(-22,2,.72,seed);storyPine(10,0,.9,seed+3);storyPine(35,8,.48,seed+8);
   storyStone(-7,13,.65);storyMushroom(-34,12,.55);
@@ -1857,8 +1857,8 @@ function draw(time){ctx.clearRect(0,0,width,height);
  for(let i=0;i<31;i++){let x=((colorSeed(i*54)*width+time*(i%3+1)*2)%(width+25)),y=colorSeed(i*99)*height;ellipse(x,y,1.5,1.5,'#ffffff8c');}
  const visible=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){let {x,y}=view(r,c);if(x<-110||x>width+110||y<-110||y>height+110)continue;const type=game.board[key(r,c)];if(type)visible.push([r,c,type]);else if(available(r,c))drawPlaceholder(r,c);}
  visible.sort((a,b)=>(a[0]+a[1])-(b[0]+b[1]));for(const [r,c,t] of visible)drawTileLux(r,c,t,hover?.r===r&&hover?.c===c,time);
- if(hover&&canBuild(hover.r,hover.c)){let {x,y}=view(hover.r,hover.c),t=buildMode==='road'?'path':game.bank[game.selected];ctx.globalAlpha=.57;
- if(unifiedMode){unifiedGround(hover.r,hover.c,t,true);if(t==='path')drawConnectedPath(hover.r,hover.c,currentRoad());else sceneStory(t,x,y,zoom,key(hover.r,hover.c)+1,time);}
+ if(hover&&canBuild(hover.r,hover.c)){let {x,y}=view(hover.r,hover.c),t=buildMode==='landmark'?game.selectedLandmark:buildMode==='road'?'path':game.bank[game.selected];ctx.globalAlpha=.57;
+ if(unifiedMode){unifiedGround(hover.r,hover.c,t,true);if(t==='path')drawConnectedPath(hover.r,hover.c,currentRoad());else if(t==='pond'&&joinedPond(hover.r,hover.c))drawJoinedPond(hover.r,hover.c,time);else sceneStory(t,x,y,zoom,key(hover.r,hover.c)+1,time);}
  else {diamondStory(x,y,zoom,'#d5f4bb',true,key(hover.r,hover.c));
  if(!paintedTileArt(t,x,y))sceneStory(t,x,y,zoom,key(hover.r,hover.c)+1,time);}
  ctx.globalAlpha=1;}
