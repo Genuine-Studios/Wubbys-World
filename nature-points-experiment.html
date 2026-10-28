@@ -479,7 +479,7 @@ function fresh(){
  {day:1,text:'A lovely morning for a walk.'}],
  wubby:{r:HOME,c:HOME,x:HOME,y:HOME,from:home,to:home,prog:1,state:'thinking',
  stateTime:2,speech:'',speechFor:0,goal:null,route:[],lastMemory:'',facing:7,lookFacing:null,lookTime:0,blinkTime:0},
- apples:0,sky:'sun',weatherTimer:0,discoveries:1,activityCounts:{},activityMoments:[],farthest:0};
+ apples:0,sky:'sun',weatherTimer:0,discoveries:1,activityCounts:{},activityMoments:[],farthest:0,dialogueDecks:{},recentSpeech:[]};
 }
 function migrateSmallWorld(src){
  const out={...fresh(),...src},offset=HOME-7;
