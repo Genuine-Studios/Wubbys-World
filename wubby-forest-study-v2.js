@@ -227,6 +227,16 @@ function forest(c,seed,time){
   if(Math.abs(x)/53+Math.abs(y)/24>.81)continue;
   ellipse(c,x,y,1.4,1.15,j%2?'#f3d9ad':'#e9e8b6');
  }
+ // The old game's charming life is not something to lose: a few forests
+ // occasionally have their own moving butterflies, on top of the foliage.
+ if(seed%5===0){
+  const x=12+Math.sin(time*1.9+seed)*12;
+  const y=-30+Math.sin(time*2.7+seed)*7;
+  const wing=.7+.45*Math.abs(Math.sin(time*11+seed));
+  ellipse(c,x-3.5,y,3.6*wing,4.2, '#ffed9d');
+  ellipse(c,x+3.5,y,3.6*wing,4.2, '#e9c9ee');
+  ellipse(c,x,y+1,1,3,'#715e4a');
+ }
  return true;
 }
 function details(seed){
