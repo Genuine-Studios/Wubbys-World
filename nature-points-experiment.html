@@ -261,6 +261,36 @@ Object.assign(NL_TEXT,{"Ancient stone circle":"Oude steencirkel","Abandoned ruin
 Object.assign(NL_TEXT,{"An ancient circle of stones! Who left it here?":"Een oude steencirkel! Wie heeft die hier achtergelaten?","These old ruins must have a story.":"Deze ruïnes hebben vast een verhaal.","A hidden cave! I wonder what is inside.":"Een verborgen grot! Wat zou erin zitten?","What a mysterious monument!":"Wat een mysterieus monument!"});
 Object.assign(NL_TEXT,{'Building something':'Iets aan het bouwen','World filled':'Wereld gevuld'});
 Object.assign(NL_TEXT,{"Clover meadow":"Klaverweide","Oak forest":"Eikenbos","Fern field":"Varenveld","Heather field":"Heideveld","Reed bank":"Rietkraag","Fallen tree":"Omgevallen boom","Willow grove":"Wilgenbos","Sandy shore":"Zandige oever","Muddy puddle":"Modderpoel","Moss forest":"Mosbos","Waterfall":"Kleine waterval","Rock plateau":"Rotsplateau","Misty swamp":"Mistig moeras","Mountain ridge":"Bergrichel","Bamboo grove":"Bamboebos","Crystal rocks":"Kristalrotsen","Giant mushrooms":"Reuzenpaddenstoelen","Hot spring":"Warmwaterbron","Wild orchard":"Verwilderde boomgaard","Rocky gorge":"Rotsige kloof","Evergreen forest":"Eeuwiggroen woud","Blooming highland":"Bloeiende hoogvlakte","Silver birch grove":"Zilverberkenbos","Ancient hollow oak":"Holle Oerboom","Abandoned apiary":"Verlaten bijenstal","Old watchtower":"Oude uitkijktoren","Ruined windmill":"Vervallen molen","Sunken boat":"Verzonken boot","Fossil field":"Fossielenveld","Overgrown gate":"Overwoekerde poort","Old observatory":"Oude sterrenwacht"});
+Object.assign(NL_TEXT,{
+ "Build Wubby's world · Nature Points":"Bouw Wubbys wereld · Natuurpunten",
+ "Choose from three evolving landscapes and three rotating road pieces. Earn Nature Points for beautiful regions.":"Kies uit drie wisselende landschappen en drie draaibare wegstukken. Verdien natuurpunten met mooie natuurgebieden."
+});
+Object.assign(NL_TEXT,{
+ "I found some acorns under the big oaks!":"Kijk nou, eikels onder de grote eiken!",
+ "These ferns are taller than me!":"Die varens zijn groter dan ik!",
+ "So many little bees!":"Wat een hoop bijtjes!",
+ "I wonder who lives under this log.":"Wie zou er onder deze boomstam wonen?",
+ "The willow leaves are so peaceful.":"Wat ruisen de wilgen mooi!",
+ "Such pretty smooth stones!":"Wat een mooie gladde steentjes!",
+ "Look at my muddy footprints!":"Kijk mijn modderige pootafdrukken!",
+ "Everything is so soft here!":"Wat is het mos hier zacht!",
+ "What a lovely rushing sound!":"Wat een mooi kabbelend geluid!",
+ "These stones shine in the sunlight!":"Die stenen schitteren in de zon!",
+ "These mushrooms are enormous!":"Wat een enorme paddenstoelen!",
+ "This warm water feels wonderful!":"Dat warme water voelt heerlijk!",
+ "Found acorns beneath the oak trees.":"Ik vond eikels onder de grote eiken.",
+ "I wandered through tall ferns.":"Ik liep tussen de hoge varens.",
+ "I listened to buzzing bees in the heather.":"Ik luisterde naar de bijen in de heide.",
+ "I watched little creatures around an old log.":"Ik vond kleine diertjes onder een oude boomstam.",
+ "I rested beneath the hanging willow branches.":"Ik rustte uit onder de wilgentakken.",
+ "I gathered a few pebbles by the water.":"Ik verzamelde een paar steentjes aan de waterkant.",
+ "I left tiny footprints in the mud.":"Ik maakte kleine pootafdrukken in de modder.",
+ "I sat for a while on the forest moss.":"Ik zat heerlijk zacht op het mos.",
+ "I watched the small waterfall.":"Ik keek naar de kleine waterval.",
+ "I found beautiful shining crystals.":"Ik ontdekte schitterende kristallen.",
+ "I explored a field of giant mushrooms.":"Ik liep tussen de reuzenpaddenstoelen.",
+ "I warmed up beside a hot spring.":"Ik warmde me bij een warmwaterbron."
+});
 const ORIGINAL_UI_TEXT=[];
 const walker=document.createTreeWalker(document.querySelector('.app'),NodeFilter.SHOW_TEXT);
 for(let node;node=walker.nextNode();){let value=node.nodeValue,trim=value.trim();if(trim&&Object.prototype.hasOwnProperty.call(NL_TEXT,trim))ORIGINAL_UI_TEXT.push([node,value]);}
