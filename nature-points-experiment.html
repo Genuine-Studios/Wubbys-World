@@ -615,6 +615,35 @@ function renderDiary(){$('diary').innerHTML=game.journal.slice(0,14).map(e=>`<di
 function escapeHTML(s){return String(s).replace(/[&<>\"]/g,t=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[t]));}
 
 // ROAD SYSTEM: pieces keep their own fixed shape. N,E,S,W indices 0..3.
+// Shared terrain rules for building and Wubby's navigation.
+const WATER_TERRAIN=new Set(['pond','brook']);
+const UNWALKABLE_TERRAIN=new Set([
+ 'pond','brook','waterfall','hotspring','marsh','reeds',
+ 'hill','rocks','plateau','ridge','gorge','crystal'
+]);
+const NO_ROAD_TERRAIN=new Set([
+ 'hill','rocks','plateau','ridge','gorge','crystal',
+ 'waterfall','hotspring','marsh','reeds'
+]);
+function underlayAt(k){
+ const tile=game.board[k];
+ return tile==='path'&&game.bridgeUnderlay?.[k]?game.bridgeUnderlay[k]:tile;
+}
+function walkableAt(k){
+ const tile=game.board[k];
+ return !!tile&&!UNWALKABLE_TERRAIN.has(tile);
+}
+function roadAllowedOn(k){
+ const tile=game.board[k];
+ return tile!=='home'&&!landmark(tile)&&!NO_ROAD_TERRAIN.has(tile);
+}
+function waterAt(k){return WATER_TERRAIN.has(underlayAt(k));}
+function pondAt(r,c){return r>=0&&c>=0&&r<N&&c<N&&underlayAt(key(r,c))==='pond';}
+function roadForSite(k,selected){
+ const original=normalizedRoad(selected);
+ return waterAt(k)?{kind:'bridge',rot:original.rot}:original;
+}
+
 const ROAD_BASE={straight:[0,2],bend:[0,1],tee:[0,1,3],cross:[0,1,2,3],bridge:[0,2]};
 const ROAD_NAME={straight:['Recht','Straight'],bend:['Bocht','Bend'],tee:['T-splitsing','T-junction'],cross:['Kruising','Crossroads'],bridge:['Bruggetje','Little bridge']};
 const ROAD_WEIGHTS={straight:42,bend:42,tee:6,cross:1.3,bridge:2};
@@ -643,7 +672,18 @@ function roadLinked(a,b){
  const dir=q.r===p.r-1&&q.c===p.c?0:q.r===p.r&&q.c===p.c+1?1:q.r===p.r+1&&q.c===p.c?2:q.r===p.r&&q.c===p.c-1?3:-1;
  return dir>=0&&rotatedArms(getRoad(a)).includes(dir)&&rotatedArms(getRoad(b)).includes((dir+2)%4);
 }
-function allowsMove(a,b){return game.board[a]!=='path'||game.board[b]!=='path'||roadLinked(a,b);}
+function allowsMove(a,b){
+ if(!walkableAt(a)||!walkableAt(b))return false;
+ const p=pos(a),q=pos(b);
+ const d=q.r===p.r-1&&q.c===p.c?0:q.r===p.r&&q.c===p.c+1?1:
+  q.r===p.r+1&&q.c===p.c?2:q.r===p.r&&q.c===p.c-1?3:-1;
+ if(d<0)return false;
+ const aRoad=game.board[a]==='path',bRoad=game.board[b]==='path';
+ if(aRoad&&bRoad)return roadLinked(a,b);
+ if(aRoad&&getRoad(a).kind==='bridge'&&!rotatedArms(getRoad(a)).includes(d))return false;
+ if(bRoad&&getRoad(b).kind==='bridge'&&!rotatedArms(getRoad(b)).includes((d+2)%4))return false;
+ return true;
+}
 function initRoads(){
  game.roads=game.roads||{};game.bridgeUnderlay=game.bridgeUnderlay||{};
  for(const [k,v] of Object.entries(game.roads))game.roads[k]=normalizedRoad(v);
@@ -1001,11 +1041,26 @@ function placement(r,c){if(!canBuild(r,c)){toast(game.board[key(r,c)]==='home'?"
   toast(language==='nl'?'Een bijzondere plek kan alleen op een lege tegel, na de juiste mijlpaal.':'Landmarks need an empty tile and the required world milestone.');return;
  }
  const earlierProgress=worldProgress();
- if(roadPiece?.kind==='bridge'&&!['pond','brook'].includes(old)){toast(language==='nl'?'Een bruggetje moet over een vijver of beek.':'A bridge must cross water.');return;}
- if(roadPiece&&roadPiece.kind!=='bridge'&&['pond','brook'].includes(old)){toast(language==='nl'?'Voor water heb je een bruggetje nodig.':'You need a bridge over water.');return;}
- if(old===tile){toast(language==='nl'?'Hier ligt al zo’n tegel.':'This tile is already here.');return;}
- const like=game.favorite;if(old&&game.visited[k]>=2){if(old===like){game.happiness=clamp(game.happiness-18,20,100);speak('My favorite spot...',3);log(`Something feels wrong. The ${LABEL[old].toLowerCase()} I loved has disappeared.`);}else {game.happiness=clamp(game.happiness-3,20,100);}}
- if(roadPiece){game.roads[k]={...roadPiece};if(roadPiece.kind==='bridge')game.bridgeUnderlay[k]=old;else delete game.bridgeUnderlay[k];}
+ if(roadPiece&&!roadAllowedOn(k)){
+  toast(language==='nl'?'Hier kun je geen pad aanleggen. Bergen, rotsen en bijzondere plekken blijven intact.':
+   'You cannot build a road here. Rocks, mountains and landmarks stay intact.');return;
+ }
+ const existingUnderlay=waterAt(k)?underlayAt(k):null;
+ if(roadPiece){
+  roadPiece=roadForSite(k,roadPiece);
+  if(roadPiece.kind==='bridge'&&!existingUnderlay){
+   toast(language==='nl'?'Een bruggetje hoort boven water.':'Bridges must be placed over water.');return;
+  }
+ }
+ if(old===tile&&tile!=='path'){toast(language==='nl'?'Hier ligt al zo’n tegel.':'This tile is already here.');return;}
+ if(tile==='path'&&old==='path'&&roadPiece){
+  const previous=getRoad(k);
+  if(previous.kind===roadPiece.kind&&previous.rot===roadPiece.rot){
+   toast(language==='nl'?'Dit pad ligt al in deze richting.':'This road already has that shape.');return;
+  }
+ }
+ const like=game.favorite;if(old&&old!==tile&&game.visited[k]>=2){if(old===like){game.happiness=clamp(game.happiness-18,20,100);speak('My favorite spot...',3);log(`Something feels wrong. The ${LABEL[old].toLowerCase()} I loved has disappeared.`);}else {game.happiness=clamp(game.happiness-3,20,100);}}
+ if(roadPiece){game.roads[k]={...roadPiece};if(roadPiece.kind==='bridge')game.bridgeUnderlay[k]=existingUnderlay;else delete game.bridgeUnderlay[k];}
  else{delete game.roads[k];delete game.bridgeUnderlay[k];}
  game.board[k]=tile;game.placed++;let dist=Math.abs(r-HOME)+Math.abs(c-HOME);
  if(tile===like&&dist<=3){game.happiness=clamp(game.happiness+9,0,100);log(`There's a ${LABEL[tile].toLowerCase()} close to home! That makes me happy.`);}
@@ -1295,15 +1350,16 @@ function unifiedGround(r,c,type,highlight=false){
  if(highlight)storyPath(top,'#fff7bd4d','#f8ecc0',1.5*zoom);
 }
 // The road is painted directly on the standard ground diamond: no extra platform.
-function drawConnectedPath(r,c,spec){
+function drawConnectedPath(r,c,spec,time=0){
  const {x,y}=view(r,c),w=TILE_W*.5*zoom,h=TILE_H*.5*zoom;
+ if(spec.kind==='bridge'){
+  if(underlayAt(key(r,c))==='pond')drawJoinedPond(r,c,time);
+  else if(underlayAt(key(r,c))==='brook')sceneStory('brook',x,y,zoom,key(r,c)+1,time);
+ }
  const dirs=[[w*.5,-h*.5],[w*.5,h*.5],[-w*.5,h*.5],[-w*.5,-h*.5]];
  const arms=rotatedArms(spec),bridge=spec.kind==='bridge';
  ctx.save();ctx.beginPath();ctx.moveTo(x,y-h);ctx.lineTo(x+w,y);ctx.lineTo(x,y+h);ctx.lineTo(x-w,y);ctx.closePath();ctx.clip();
- if(bridge){
-  storyEllipse(x,y,w*.8,h*.65,'#6fb5c5');
-  storyEllipse(x-4*zoom,y-1*zoom,w*.5,h*.37,'#a7d9d7');
- }
+ // The underlying water is drawn before the wooden bridge planks.
  for(const d of arms){
   const [dx,dy]=dirs[d],thickness=bridge?18:22;
   ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+dx,y+dy);
@@ -1321,14 +1377,14 @@ function drawConnectedPath(r,c,spec){
  ctx.restore();
 }
 function joinedPond(r,c){
- return neighbors(r,c).some(([rr,cc])=>game.board[key(rr,cc)]==='pond');
+ return neighbors(r,c).some(([rr,cc])=>pondAt(rr,cc));
 }
 function drawJoinedPond(r,c,time){
  // Identical blue surface reaches shared edges; bank contours only outline the outer perimeter.
  const {x,y}=view(r,c),w=TILE_W*.5*zoom,h=TILE_H*.5*zoom;
  const corners=[[x,y-h],[x+w,y],[x,y+h],[x-w,y]];
  const adjacent=[[r-1,c],[r,c+1],[r+1,c],[r,c-1]].map(([rr,cc])=>
-  rr>=0&&rr<N&&cc>=0&&cc<N&&game.board[key(rr,cc)]==='pond');
+  pondAt(rr,cc));
  ctx.save();
  ctx.beginPath();ctx.moveTo(...corners[0]);for(let i=1;i<4;i++)ctx.lineTo(...corners[i]);
  ctx.closePath();ctx.fillStyle='#77c1c9';ctx.fill();ctx.clip();
@@ -1357,7 +1413,7 @@ function drawTileLux(r,c,type,highlight,time){
  let {x,y}=view(r,c);
  if(unifiedMode){
   unifiedGround(r,c,type,highlight);
-  if(type==='path')drawConnectedPath(r,c,getRoad(key(r,c)));
+  if(type==='path')drawConnectedPath(r,c,getRoad(key(r,c)),time);
   else if(type==='pond'&&joinedPond(r,c))drawJoinedPond(r,c,time);
   else sceneStory(type,x,y,zoom,key(r,c)+1,time);
  }
@@ -2081,8 +2137,11 @@ function draw(time){ctx.clearRect(0,0,width,height);
  for(let i=0;i<31;i++){let x=((colorSeed(i*54)*width+time*(i%3+1)*2)%(width+25)),y=colorSeed(i*99)*height;ellipse(x,y,1.5,1.5,'#ffffff8c');}
  const visible=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){let {x,y}=view(r,c);if(x<-110||x>width+110||y<-110||y>height+110)continue;const type=game.board[key(r,c)];if(type)visible.push([r,c,type]);else if(available(r,c))drawPlaceholder(r,c);}
  visible.sort((a,b)=>(a[0]+a[1])-(b[0]+b[1]));for(const [r,c,t] of visible)drawTileLux(r,c,t,hover?.r===r&&hover?.c===c,time);
- if(hover&&canBuild(hover.r,hover.c)){let {x,y}=view(hover.r,hover.c),t=buildMode==='landmark'?game.selectedLandmark:buildMode==='road'?'path':game.bank[game.selected];ctx.globalAlpha=.57;
- if(unifiedMode){unifiedGround(hover.r,hover.c,t,true);if(t==='path')drawConnectedPath(hover.r,hover.c,currentRoad());else if(t==='pond'&&joinedPond(hover.r,hover.c))drawJoinedPond(hover.r,hover.c,time);else sceneStory(t,x,y,zoom,key(hover.r,hover.c)+1,time);}
+ if(hover&&canBuild(hover.r,hover.c)&&
+   (buildMode!=='road'||(roadAllowedOn(key(hover.r,hover.c))&&
+    (currentRoad().kind!=='bridge'||waterAt(key(hover.r,hover.c)))))){
+ let {x,y}=view(hover.r,hover.c),t=buildMode==='landmark'?game.selectedLandmark:buildMode==='road'?'path':game.bank[game.selected];ctx.globalAlpha=.57;
+ if(unifiedMode){unifiedGround(hover.r,hover.c,t,true);if(t==='path')drawConnectedPath(hover.r,hover.c,roadForSite(key(hover.r,hover.c),currentRoad()),time);else if(t==='pond'&&joinedPond(hover.r,hover.c))drawJoinedPond(hover.r,hover.c,time);else sceneStory(t,x,y,zoom,key(hover.r,hover.c)+1,time);}
  else {diamondStory(x,y,zoom,'#d5f4bb',true,key(hover.r,hover.c));
  if(!paintedTileArt(t,x,y))sceneStory(t,x,y,zoom,key(hover.r,hover.c)+1,time);}
  ctx.globalAlpha=1;}
@@ -2146,7 +2205,7 @@ function weightedChoice(candidates,weights){
 }
 function decide(){
  let k=game.wubby,where=key(Math.round(k.y),Math.round(k.x));k.activity=null;
- if(!game.board[where]){head(home,'shelter');return;}
+ if(!walkableAt(where)){head(home,'shelter');return;}
  if(game.energy<32){head(home,'sleeping');return;}
  const tree=routingTree(where);
  if(game.food<35){
@@ -2156,7 +2215,7 @@ function decide(){
   else head(home,'eating');return;
  }
  if(game.sky==='rain'&&Math.random()<.55){head(home,'shelter');return;}
- const possible=game.board.map((tile,i)=>tile&&i!==where&&Number.isFinite(tree.dist[i])?i:-1).filter(i=>i>=0);
+ const possible=game.board.map((tile,i)=>walkableAt(i)&&i!==where&&Number.isFinite(tree.dist[i])?i:-1).filter(i=>i>=0);
  if(!possible.length){rest('thinking',2);return;}
  const weights=possible.map(i=>{
   const tile=game.board[i],cost=tree.dist[i],visits=game.visited[i]||0,p=pos(i);
@@ -2251,7 +2310,7 @@ function update(dt){let k=game.wubby;
  game.food=clamp(game.food-dt*(k.state==='sleeping'?.045:.19),0,100);
  if(k.state!=='sleeping')game.energy=clamp(game.energy-dt*(k.state==='walking'?.24:.16),0,100);
  if(k.state==='walking'){
-  if(!game.board[k.to]||!allowsMove(k.from,k.to)){k.route=[];k.x=Math.round(k.x);k.y=Math.round(k.y);rest('thinking',1);}
+  if(!game.board[k.to]||!allowsMove(k.from,k.to)){k.route=[];const safe=pos(walkableAt(k.from)?k.from:home);k.x=safe.c;k.y=safe.r;rest('thinking',1);}
   else {let from=pos(k.from),to=pos(k.to);k.prog+=dt/(.75/Math.max(.75,zoom));let p=clamp(k.prog,0,1);k.x=from.c+(to.c-from.c)*p;k.y=from.r+(to.r-from.r)*p;if(k.prog>=1){k.x=to.c;k.y=to.r;if(k.route.length)step();else arrive();}}
  }else{ k.stateTime-=dt;if(k.state==='sleeping'){game.energy=clamp(game.energy+dt*9,0,100);}if(k.stateTime<=0){if(k.state==='sleeping')game.energy=Math.max(game.energy,90);if(game.apples>0){game.apples--;game.food=clamp(game.food+22,0,100);speak('An apple! Lucky me.',3);rest('apple',2.5);log('Found an apple outside. A lovely surprise!');}
  else decide();}}
