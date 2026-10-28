@@ -799,34 +799,35 @@ function unifiedGround(r,c,type,highlight=false){
  if(highlight)storyPath(top,'#fff7bd4d','#f8ecc0',1.5*zoom);
 }
 // The road is painted directly on the standard ground diamond: no extra platform.
-function drawConnectedPath(r,c){
+function drawConnectedPath(r,c,spec){
  const {x,y}=view(r,c),w=TILE_W*.5*zoom,h=TILE_H*.5*zoom;
- const potential=[
-  {r:r-1,c,dx:w*.5,dy:-h*.5},
-  {r,c:c+1,dx:w*.5,dy:h*.5},
-  {r:r+1,c,dx:-w*.5,dy:h*.5},
-  {r,c:c-1,dx:-w*.5,dy:-h*.5}
- ];
- const arms=potential.filter(p=>p.r>=0&&p.c>=0&&p.r<N&&p.c<N&&
-  ['home','path'].includes(game.board[key(p.r,p.c)]));
+ const dirs=[[w*.5,-h*.5],[w*.5,h*.5],[-w*.5,h*.5],[-w*.5,-h*.5]];
+ const arms=rotatedArms(spec),bridge=spec.kind==='bridge';
  ctx.save();ctx.beginPath();ctx.moveTo(x,y-h);ctx.lineTo(x+w,y);ctx.lineTo(x,y+h);ctx.lineTo(x-w,y);ctx.closePath();ctx.clip();
- for(const p of (arms.length?arms:[{dx:w*.15,dy:h*.15}])){
-  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+p.dx,y+p.dy);
-  ctx.lineWidth=25*zoom;ctx.lineCap='butt';ctx.strokeStyle='#95866b';ctx.stroke();
-  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+p.dx,y+p.dy);
-  ctx.lineWidth=22*zoom;ctx.strokeStyle='#d7c3a0';ctx.stroke();
-  for(let t=.17;t<.99;t+=.25){
-   let a=x+p.dx*t,b=y+p.dy*t;
-   ctx.beginPath();ctx.moveTo(a-p.dy*.07,b+p.dx*.07);ctx.lineTo(a+p.dy*.07,b-p.dx*.07);
-   ctx.strokeStyle='#b09d7d';ctx.lineWidth=.9*zoom;ctx.stroke();
+ if(bridge){
+  storyEllipse(x,y,w*.8,h*.65,'#6fb5c5');
+  storyEllipse(x-4*zoom,y-1*zoom,w*.5,h*.37,'#a7d9d7');
+ }
+ for(const d of arms){
+  const [dx,dy]=dirs[d],thickness=bridge?18:22;
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+dx,y+dy);
+  ctx.lineWidth=(thickness+3)*zoom;ctx.lineCap='butt';ctx.strokeStyle=bridge?'#8f6747':'#9a896d';ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+dx,y+dy);
+  ctx.lineWidth=thickness*zoom;ctx.strokeStyle=bridge?'#d7b180':'#d8c6a7';ctx.stroke();
+  for(let t=.25;t<1;t+=.27){
+   const px=x+dx*t,py=y+dy*t;
+   ctx.beginPath();ctx.moveTo(px-dy*.17,py+dx*.17);ctx.lineTo(px+dy*.17,py-dx*.17);
+   ctx.lineWidth=(bridge?1.6:1)*zoom;ctx.strokeStyle=bridge?'#8e6d48':'#ae9e81';ctx.stroke();
   }
  }
- storyEllipse(x,y,10.5*zoom,5*zoom,'#d7c3a0');
+ storyEllipse(x,y,(bridge?9:10.5)*zoom,(bridge?4.8:5.5)*zoom,bridge?'#dfbd90':'#d8c6a7');
+ if(spec.kind==='left')storyEllipse(x-3*zoom,y+1*zoom,2.5*zoom,1.2*zoom,'#f1dfbd');
+ if(spec.kind==='right')storyEllipse(x+3*zoom,y-1*zoom,2.5*zoom,1.2*zoom,'#f1dfbd');
  ctx.restore();
 }
 function drawTileLux(r,c,type,highlight,time){
  let {x,y}=view(r,c);
- if(unifiedMode){unifiedGround(r,c,type,highlight);if(type==='path')drawConnectedPath(r,c);else sceneStory(type,x,y,zoom,key(r,c)+1,time);}
+ if(unifiedMode){unifiedGround(r,c,type,highlight);if(type==='path')drawConnectedPath(r,c,getRoad(key(r,c)));else sceneStory(type,x,y,zoom,key(r,c)+1,time);}
  else {diamondStory(x,y,zoom,C[type]||'#b8d39a',highlight,key(r,c));
     if(!paintedTileArt(type,x,y))sceneStory(type,x,y,zoom,key(r,c)+1,time);}
 }
@@ -1310,8 +1311,8 @@ function draw(time){ctx.clearRect(0,0,width,height);
  for(let i=0;i<31;i++){let x=((colorSeed(i*54)*width+time*(i%3+1)*2)%(width+25)),y=colorSeed(i*99)*height;ellipse(x,y,1.5,1.5,'#ffffff8c');}
  const visible=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){let {x,y}=view(r,c);if(x<-110||x>width+110||y<-110||y>height+110)continue;const type=game.board[key(r,c)];if(type)visible.push([r,c,type]);else if(available(r,c))drawPlaceholder(r,c);}
  visible.sort((a,b)=>(a[0]+a[1])-(b[0]+b[1]));for(const [r,c,t] of visible)drawTileLux(r,c,t,hover?.r===r&&hover?.c===c,time);
- if(hover&&canBuild(hover.r,hover.c)){let {x,y}=view(hover.r,hover.c),t=pathBrush?'path':game.bank[game.selected];ctx.globalAlpha=.57;
- if(unifiedMode){unifiedGround(hover.r,hover.c,t,true);if(t==='path')drawConnectedPath(hover.r,hover.c);else sceneStory(t,x,y,zoom,key(hover.r,hover.c)+1,time);}
+ if(hover&&canBuild(hover.r,hover.c)){let {x,y}=view(hover.r,hover.c),t=buildMode==='road'?'path':game.bank[game.selected];ctx.globalAlpha=.57;
+ if(unifiedMode){unifiedGround(hover.r,hover.c,t,true);if(t==='path')drawConnectedPath(hover.r,hover.c,currentRoad());else sceneStory(t,x,y,zoom,key(hover.r,hover.c)+1,time);}
  else {diamondStory(x,y,zoom,'#d5f4bb',true,key(hover.r,hover.c));
  if(!paintedTileArt(t,x,y))sceneStory(t,x,y,zoom,key(hover.r,hover.c)+1,time);}
  ctx.globalAlpha=1;}
