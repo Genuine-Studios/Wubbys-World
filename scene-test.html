@@ -248,15 +248,6 @@ game.wubby.facing=Number.isFinite(game.wubby.facing)?game.wubby.facing:7;
 game.wubby.lookFacing=null;game.wubby.lookTime=0;game.wubby.blinkTime=0;game.wubby.activity=null;
 game.activityCounts=game.activityCounts||{};
 game.activityMoments=Array.isArray(game.activityMoments)?game.activityMoments:[];
-// Existing worlds remain intact. Replace only excess special tiles in the selection bank.
-{
- const offers=[];
- for(let i=0;i<game.bank.length;i++){
-   const t=game.bank[i];
-   if(remainingCapacity(t,offers)<=0)game.bank[i]=pickTile(offers);
-   offers.push(game.bank[i]);
- }
-}
 let zoom=1.08,panX=0,panY=35;
 function save(){try{localStorage.setItem(STORE,JSON.stringify(game));}catch(e){}}
 function toast(t){let e=$('toast');e.textContent=tr(t);e.classList.add('show');clearTimeout(toaster);toaster=setTimeout(()=>e.classList.remove('show'),2150);}
@@ -312,6 +303,16 @@ const TILE_WEIGHTS={
  orchard:4,picnic:2,well:1
 };
 const TILE_LIMITS={well:1,picnic:2};
+// Existing worlds remain intact. Replace only excess special tiles in the selection bank.
+{
+ const offers=[];
+ for(let i=0;i<game.bank.length;i++){
+   const t=game.bank[i];
+   if(remainingCapacity(t,offers)<=0)game.bank[i]=pickTile(offers);
+   offers.push(game.bank[i]);
+ }
+}
+
 function unlockedTiles(){
  const count=game.placed;
  if(count<4)return ['grass','path','meadow','flowers','orchard','forest','pond','garden'];
