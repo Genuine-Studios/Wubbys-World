@@ -144,6 +144,10 @@ window.WUBBY_DIALOGUE_PACK={
     "shrine": [
       "A mysterious monument! It feels very old.",
       "Een mysterieus monument! Het voelt heel oud."
+    ],
+    "path": [
+      "Where might this path lead?",
+      "Waar zou dit pad naartoe leiden?"
     ]
   },
   "tile": {
@@ -195,6 +199,22 @@ window.WUBBY_DIALOGUE_PACK={
       [
         "If I keep walking, will I pass myself?",
         "Als ik doorloop, kom ik mezelf dan tegen?"
+      ],
+      [
+        "I think I've been here before.",
+        "Volgens mij ben ik hier al eerder geweest."
+      ],
+      [
+        "I know this path like the back of my paw!",
+        "Ik ken dit pad inmiddels op mijn duimpje!"
+      ],
+      [
+        "Who could have placed all these stones here?",
+        "Wie zou al die stenen hier hebben neergelegd?"
+      ],
+      [
+        "If I walk long enough, could I catch up with myself?",
+        "Als ik lang genoeg blijf wandelen, kom ik dan ooit achter mezelf terecht?"
       ]
     ],
     "meadow": [
@@ -735,6 +755,18 @@ window.WUBBY_DIALOGUE_PACK={
       [
         "The well is quiet. Perhaps it's thinking.",
         "De put is stil. Misschien denkt hij na."
+      ],
+      [
+        "A wishing well! I could think of a thousand wishes.",
+        "Een wensput! Ik zou wel duizend wensen kunnen bedenken."
+      ],
+      [
+        "If I say my wish out loud, will it still come true?",
+        "Als ik mijn wens hardop zeg, komt hij dan nog uit?"
+      ],
+      [
+        "I wonder if the well itself has wishes.",
+        "Ik vraag me af of die put zelf ook wensen heeft."
       ]
     ],
     "stonecircle": [
@@ -849,6 +881,10 @@ window.WUBBY_DIALOGUE_PACK={
       [
         "A tiny window would look nice in that trunk.",
         "Een klein raampje zou hier mooi staan."
+      ],
+      [
+        "Maybe this is another Wubby's house.",
+        "Misschien is dit wel het huis van een andere Wubby."
       ]
     ],
     "apiary": [
@@ -1424,6 +1460,13 @@ window.WUBBY_DIALOGUE_PACK={
       ]
     },
     {
+      "day": 12,
+      "line": [
+        "Maybe someone somewhere is dreaming of me. That would be strange.",
+        "Misschien droomt iemand ergens over mij. Dat zou vreemd zijn."
+      ]
+    },
+    {
       "day": 13,
       "line": [
         "Do stars know they shine for everybody?",
@@ -1463,6 +1506,13 @@ window.WUBBY_DIALOGUE_PACK={
       "line": [
         "Some adventures happen without going anywhere.",
         "Sommige avonturen gebeuren zonder weg te gaan."
+      ]
+    },
+    {
+      "day": 20,
+      "line": [
+        "What if I'm the only Wubby in the whole world?",
+        "Wat als ik de enige Wubby op de hele wereld ben?"
       ]
     },
     {
