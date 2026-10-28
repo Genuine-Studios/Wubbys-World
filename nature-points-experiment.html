@@ -2215,6 +2215,26 @@ function decide(){
   else head(home,'eating');return;
  }
  if(game.sky==='rain'&&Math.random()<.55){head(home,'shelter');return;}
+ // Visit the banks and foothills of impassable scenery rather than walking on it.
+ // This preserves fishing, cloud-watching, waterfall discovery and mountain remarks.
+ const shoreVisits=[];
+ for(let i=0;i<game.board.length;i++){
+  const tile=game.board[i];
+  if(!tile||walkableAt(i))continue;
+  const p=pos(i),reachable=neighbors(p.r,p.c)
+   .map(([r,c])=>key(r,c))
+   .filter(n=>walkableAt(n)&&Number.isFinite(tree.dist[n]));
+  if(!reachable.length)continue;
+  reachable.sort((a,b)=>tree.dist[a]-tree.dist[b]);
+  shoreVisits.push({focus:i,shore:reachable[0],unseen:!(game.visited[i]>0),dist:tree.dist[reachable[0]]});
+ }
+ const unseen=shoreVisits.filter(entry=>entry.unseen);
+ if(shoreVisits.length&&Math.random()<(unseen.length?.34:.10)){
+  const options=unseen.length?unseen:shoreVisits;
+  const weights=options.map(entry=>1/(1+entry.dist*.17));
+  const chosen=weightedChoice(options,weights);
+  head(chosen.shore,'observe',chosen.focus);return;
+ }
  const possible=game.board.map((tile,i)=>walkableAt(i)&&i!==where&&Number.isFinite(tree.dist[i])?i:-1).filter(i=>i>=0);
  if(!possible.length){rest('thinking',2);return;}
  const weights=possible.map(i=>{
@@ -2230,7 +2250,7 @@ function decide(){
  });
  head(weightedChoice(possible,weights),'enjoy');
 }
-function head(target,reason){let k=game.wubby,here=key(Math.round(k.y),Math.round(k.x)),route=shortest(here,target);k.goal=target;k.intent=reason;k.route=route;if(!route.length){if(here===target)arrive();else rest('thinking',1.4);return;}step();}
+function head(target,reason,focus=null){let k=game.wubby,here=key(Math.round(k.y),Math.round(k.x)),route=shortest(here,target);k.goal=target;k.intent=reason;k.focus=focus;k.route=route;if(!route.length){if(here===target)arrive();else rest('thinking',1.4);return;}step();}
 function step(){let k=game.wubby;k.from=key(Math.round(k.y),Math.round(k.x));k.to=k.route.shift();
  if(k.to==null||!game.board[k.to]||!allowsMove(k.from,k.to)){k.route=[];rest('thinking',1);return;}
  const a=pos(k.from),b=pos(k.to),dx=(b.c-a.c)-(b.r-a.r),dy=(b.c-a.c)+(b.r-a.r);
@@ -2238,11 +2258,17 @@ function step(){let k=game.wubby;k.from=key(Math.round(k.y),Math.round(k.x));k.t
  k.prog=0;k.state='walking';}
 
 function rest(state,time){let k=game.wubby;k.state=state;k.stateTime=time;}
-function arrive(){let k=game.wubby,tile=game.board[k.goal],p=k.goal,firstLine=null;
+function arrive(){
+ let k=game.wubby,p=k.intent==='observe'&&Number.isInteger(k.focus)&&game.board[k.focus]?k.focus:k.goal,
+  tile=game.board[p],firstLine=null;
   // Turn toward a nearby environmental feature, or the cottage when coming home.
   if(k.intent==='sleeping'||k.intent==='eating'||k.intent==='shelter') {k.facing=3;}
   else if(k.intent==='collect') {k.facing=5;}
   else if(k.intent==='enjoy'){ k.facing=(p*7+game.day*3)%8; }
+   else if(k.intent==='observe'){
+    const a=pos(k.goal),b=pos(p),dx=(b.c-a.c)-(b.r-a.r),dy=(b.c-a.c)+(b.r-a.r);
+    k.facing=facingFromScreen(dx,dy*.5);
+   }
   if(k.intent==='sleeping'){
    rest('sleeping',8);speak('Zzz...',4);if(Math.random()<.3)log('Nothing beats my own little bed after a long walk.');return;
  }if(k.intent==='eating'){
@@ -2278,7 +2304,7 @@ function arrive(){let k=game.wubby,tile=game.board[k.goal],p=k.goal,firstLine=nu
  }
  if(tile==='pond'){game.happiness=clamp(game.happiness+1,0,100);}
  if(tile==='flowers'){game.happiness=clamp(game.happiness+1,0,100)}
- if(k.intent==='enjoy'){
+ if(k.intent==='enjoy'||k.intent==='observe'){
   scoreWubbyRegion(p);
   // Let first-time landmark discoveries stand on their own.
   const built=(!visits&&landmark(tile))?false:maybeWubbyBuild(tile,p);
@@ -2352,6 +2378,14 @@ $('shareGameButton').onclick=()=>{
  else window.prompt(language==='nl'?'Kopieer de link:':'Copy this link:',url);
 };
 initializeEconomy();initRoads();
+ // Restore an old save in which Wubby was standing on water or rock.
+ // The world itself remains unchanged; only the character is returned home.
+ const standingAt=key(Math.round(game.wubby.y),Math.round(game.wubby.x));
+ if(!walkableAt(standingAt)){
+  game.wubby.x=HOME;game.wubby.y=HOME;game.wubby.r=HOME;game.wubby.c=HOME;
+  game.wubby.from=home;game.wubby.to=home;game.wubby.goal=null;
+  game.wubby.route=[];game.wubby.state='thinking';game.wubby.stateTime=1;
+ }
  // Old saved walking routes may cross intersections that are no longer connected.
  if(game.wubby.state==='walking'){
   game.wubby.x=Math.round(game.wubby.x);game.wubby.y=Math.round(game.wubby.y);
