@@ -125,6 +125,7 @@ body{background:radial-gradient(circle at 8% 2%,#fff1d3 0,#f7f4e5 30%,#e7f1e5 10
 .unified-prototype span{flex:1;min-width:195px;font-weight:600}
 .mode-switch{border:0;background:#4c7e5d;color:white;border-radius:11px;padding:10px 13px;font-weight:750;font-size:13px;cursor:pointer}
 .original-link{color:#416e52;text-decoration:underline;font-weight:700}
+.mode-switch[aria-pressed="true"]{background:#805e3e;box-shadow:0 0 0 3px #d9c29b inset;}
 </style>
 </head>
 <body>
@@ -137,7 +138,7 @@ body{background:radial-gradient(circle at 8% 2%,#fff1d3 0,#f7f4e5 30%,#e7f1e5 10
   <div class="preview-banner" role="status" id="previewBanner"><strong>Browser required:</strong> This is an interactive JavaScript game. If you can still see this notice, your current file preview isn't running the game. Download the HTML file, then open it from your phone's Downloads folder using <strong>Chrome</strong> or another full web browser. Don't play it inside the ChatGPT file preview.</div>
   <div class="unified-prototype">
  <span id="unifiedPrototypeInfo">31 × 31 tegels. Leg een pad vanaf Wubby’s huis en kijk of hij het gaat volgen. Deze proef heeft een eigen opslag.</span>
- <button id="pathBrushButton" type="button" class="mode-switch" aria-pressed="false">🪨 Pad aanleggen: uit</button>
+ <button id="pathBrushButton" type="button" class="mode-switch" aria-pressed="false" title="Leg verbonden klinkerpaden aan">🪨 Pad aanleggen: uit</button>
  <a class="original-link" href="unified-tiles-test.html">Tegelproef</a> <a class="original-link" href="index.html">Gewone spel</a>
  </div>
  <div class="layout">
@@ -163,11 +164,7 @@ body{background:radial-gradient(circle at 8% 2%,#fff1d3 0,#f7f4e5 30%,#e7f1e5 10
       <div class="help"><b>Real tiles, no painted backdrop.</b> How to play: Pick one of the three landscape tiles. Place it next to an existing tile, or replace an old one. The choice refills automatically. Wubby will explore, remember places he enjoys, eat when he's hungry, and return home to sleep. Try rain, sunshine, or leaving him an apple. Your progress saves automatically on this device.</div>
   </div>
 </div>
-<script src="art-v09.js?v=2"></script>
-<script src="art-v010.js?v=1"></script>
-<script src="art-v011.js?v=1"></script>
 <script src="art-v013.js?v=2"></script>
-<script src="art-v014.js?v=1"></script>
 <script>
 (()=>{'use strict';
 const N=31, HOME=15, TILE_W=112, TILE_H=57, STORE='wubbys-world-pathways-31x31-v1', SOURCE_STORE='wubbys-world-unified-ground-prototype-v1', LIVE_STORE='wubbys-world-real-tile-art-test-v1';
@@ -238,7 +235,7 @@ if(window.WUBBY_V011_ART)Object.assign(ART_DATA,window.WUBBY_V011_ART);
 if(window.WUBBY_V013_ART)Object.assign(ART_DATA,window.WUBBY_V013_ART);
 if(window.WUBBY_V014_ART)Object.assign(ART_DATA,window.WUBBY_V014_ART);
 const ART_SPRITES={};
-for(const [kind,url] of Object.entries(ART_DATA)){const img=new Image();img.src=url;ART_SPRITES[kind]=img;}
+// Old art sprites are intentionally not loaded in the shared-ground gameplay prototype.
 function paintedTileArt(kind,x,y){
  const im=ART_SPRITES[kind];if(!im||!im.complete||!im.naturalWidth)return false;
  ctx.save();
