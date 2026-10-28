@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Wubby's World — v0.5 Storybook Edition</title>
+<style>
+.preview-banner {background:#fff4db;border:2px solid #d3b77b;padding:15px 17px;margin:0 0 15px;border-radius:14px;color:#694f30;font-size:14px;line-height:1.5}
+.preview-cover {position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,#dbefe4,#eff6d9);color:#456b4d;text-align:center;gap:12px;pointer-events:none}
+.preview-cover .static-scene {font-size:68px;line-height:1.4;letter-spacing:10px}
+.preview-cover strong{font-size:20px}
+.preview-cover p{font-size:13px;max-width:280px;margin:0;line-height:1.6}
+.game-ready .preview-banner, .game-ready .preview-cover {display:none}
+.game-ready .running-indicator{display:inline-flex}
+.running-indicator{display:none;background:#e5f4dd;color:#47744b;border-radius:12px;padding:7px 10px;font-size:11px;font-weight:bold}
+
+:root { --ink:#30483d; --muted:#788a79; --line:#e1e8d9; --cream:#fffdf6; --leaf:#417d60; --shadow:0 12px 32px rgba(61,83,59,.10); }
+* { box-sizing:border-box; }
+body { margin:0; background:linear-gradient(140deg,#faf8ed,#eff5ed 70%,#eff6f4); font-family:ui-rounded,'Trebuchet MS',system-ui,-apple-system,Arial,sans-serif; color:var(--ink); min-height:100vh; }
+button { font:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+button:focus-visible {outline:3px solid #90cf9e;outline-offset:2px}
+.app {max-width:1320px; margin:auto; padding:19px 20px 28px; }
+.header { display:flex; align-items:center; justify-content:space-between; gap:18px; margin:0 0 14px; }
+.brand {display:flex;align-items:center;gap:12px;}
+.brand-mark {width:56px;height:56px;border:1px solid #d2e3cd;border-radius:19px;background:#e6f2d9;display:grid;place-items:center;font-size:32px;transform:rotate(-5deg);}
+h1 {font-family:Georgia,serif;font-size:30px;letter-spacing:-.8px;line-height:1.1;margin:0;color:#2c4935;}
+.subtitle {font-size:12px;color:#748875;margin:5px 0 0;font-weight:700;letter-spacing:.15px}
+.status {display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+.pill {background:#ffffffcc;border:1px solid var(--line);padding:9px 12px;border-radius:40px;font-size:12px;font-weight:750;white-space:nowrap}
+.pill strong{color:#337a55}
+.layout {display:grid;grid-template-columns:minmax(0,1fr) 326px;gap:16px;align-items:start}
+.world-column {min-width:0}
+.world-wrap {overflow:hidden; position:relative;border:1px solid #c7ddcf;border-radius:23px;box-shadow:var(--shadow);background:#def0e9;height:min(68vh,625px);min-height:380px;touch-action:none;}
+#world {width:100%;height:100%;display:block; cursor:grab}
+#world.pressing {cursor:grabbing}
+.world-title{position:absolute;left:16px;top:14px;background:#ffffffc9;border:1px solid #dbe7d8;backdrop-filter:blur(7px);border-radius:15px;padding:9px 12px;pointer-events:none;display:flex;align-items:center;gap:10px}
+.world-title .face{width:32px;height:32px;background:#f3e0b2;border-radius:50%;display:grid;place-items:center;font-size:22px}
+.world-title small{display:block;color:#7d9080;font-size:10px;font-weight:700;margin-bottom:2px}
+.world-title b{font-size:13px}
+.world-hint{position:absolute;left:14px;bottom:13px;max-width:calc(100% - 125px);background:#fffcf2dd;border:1px solid #f1e7c9;border-radius:12px;padding:8px 11px;color:#698272;font-size:11px;line-height:1.35;pointer-events:none}
+.zoom {position:absolute;bottom:13px;right:13px;display:flex;gap:5px;z-index:3}
+.zoom button{width:34px;height:34px;background:#fffef6e8;border:1px solid #dae7d8;border-radius:11px;color:#446b52;font-weight:900;font-size:18px}
+#toast {position:absolute;left:50%;top:86px;transform:translateX(-50%) translateY(-8px);background:#2d694bee;color:white;padding:10px 16px;border-radius:24px;font-size:12px;font-weight:700;box-shadow:0 8px 18px #305b4833;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap;z-index:4;max-width:90%;overflow:hidden;text-overflow:ellipsis}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.panel {background:var(--cream);border:1px solid #e5e9d8;border-radius:19px;box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+.panel h2{font-size:15px;font-weight:850;margin:0 0 4px}
+.panel .sub{font-size:11px;color:#82917f;line-height:1.45;margin:0 0 12px}
+.tile-bank {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile-option {border:2px solid #e6e7d8;outline:none;border-radius:15px;background:#fcfbf3;padding:9px 2px 10px;min-height:101px;transition:border-color .12s,transform .12s,background .12s;color:#516651;display:flex;flex-direction:column;align-items:center;gap:6px}
+.tile-option:hover{transform:translateY(-2px)}
+.tile-option.selected{border-color:#71ad75;background:#eaf6df;box-shadow:0 0 0 3px #c6e9b778}
+.tile-option .emoji{font-size:33px;line-height:1.3;filter:drop-shadow(0 3px 1px #dde8d5)}
+.tile-option .name{font-weight:850;font-size:11px}
+.tile-count {display:flex;align-items:center;gap:8px;margin-top:12px;font-size:11px;font-weight:700;color:#788879}
+.meter-track {height:7px;border-radius:9px;flex:1;background:#e7eee0;overflow:hidden}
+.meter-fill {height:100%;background:#7bbd8d;border-radius:9px;transition:width .25s}
+.sky-controls {display:flex;flex-wrap:wrap;gap:7px}
+.control-btn {flex:1;min-width:78px;border:1px solid #dfebdc;border-radius:11px;background:#f1f7ea;padding:9px 4px;font-size:12px;font-weight:800;color:#4f705d}
+.control-btn:hover{background:#e5f1dd}
+.control-btn.primary{background:#dcebd5;border-color:#bfd9b9}
+.control-btn:disabled{opacity:.5;cursor:not-allowed}
+.wubby-panel {display:flex;gap:12px;align-items:center}
+.wubby-avatar {background:linear-gradient(160deg,#f8edd4,#e8eccd);font-size:37px;border-radius:16px;width:60px;height:60px;display:grid;place-items:center;flex:none}
+.wubby-info{flex:1;min-width:0}.wubby-info b{font-size:15px}
+.mood-label{font-size:11px;margin:5px 0 7px;color:#7c8c7c}
+.bars{display:grid;grid-template-columns:48px minmax(0,1fr) 29px;gap:5px 7px;align-items:center;margin-top:10px;font-size:10px;font-weight:750;color:#839081}
+.bars .meter-fill{background:#8dc1b4}.bars .food .meter-fill{background:#e9b872}.bars .rest .meter-fill{background:#9aadd9}
+.diary{max-height:210px;overflow:auto;scrollbar-color:#c8d9c5 transparent;padding-right:3px}
+.entry{border-left:3px solid #e4eddb;padding:2px 3px 7px 10px;margin:0 0 9px}.entry:first-child{border-left-color:#83ba8d}
+.entry small{font-size:10px;color:#a2a99d;font-weight:750}
+.entry p{font-size:12px;margin:4px 0 0;line-height:1.5;color:#566d5b}
+.below{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.tip{color:#879a8a;font-size:12px;line-height:1.5}
+.linkbtn{background:none;border:0;padding:5px 0;color:#7c9183;text-decoration:underline;font-size:11px}
+.help{border:1px solid #e3eaca;border-radius:17px;background:#f6fae8;padding:13px 14px;font-size:12px;line-height:1.65;color:#667966;margin-top:12px}
+.help b{color:#3f7654}
+.mobile-stats{display:none}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sidebar .panel{margin:0}.world-wrap{height:min(63vh,520px)}.app{padding:13px}.header{margin-bottom:12px}}
+@media(max-width:550px){h1{font-size:25px}.brand-mark{width:48px;height:48px;border-radius:14px}.subtitle{font-size:11px}.header{align-items:flex-start}.status{gap:5px}.status .pill{font-size:10px;padding:7px 8px}.status .pill:nth-child(2){display:none}.layout{gap:10px}.world-wrap{height:min(43vh,370px);min-height:285px;border-radius:18px}.sidebar{grid-template-columns:1fr 1fr;gap:10px}.sidebar .panel{padding:12px}.sidebar .tile-panel{grid-column:span 2}.sidebar .diary-panel{grid-column:span 2}.tile-option{min-height:90px}.panel h2{font-size:14px}.world-hint{font-size:10px}.control-btn{min-width:unset;flex-basis:45%;padding:9px 3px}.wubby-panel{gap:7px}.wubby-avatar{font-size:27px;width:43px;height:45px}.wubby-info b{font-size:13px}.mood-label{font-size:10px}.bars{grid-template-columns:34px 1fr 23px;gap:5px;font-size:9px}.sidebar .power-panel .sub{margin-bottom:9px}}
+@media(max-width:360px){.world-wrap{min-height:265px}.status .pill:first-child{display:none}.world-wrap{min-height:305px}.control-btn{font-size:11px}}
+
+/* Storybook edition polish: parchment cards and comfortable mobile controls. */
+:root{--ink:#385644;--line:#e6e4d2;--cream:#fffcf2;--leaf:#3d7d60;--shadow:0 11px 30px rgba(75,87,48,.13)}
+body{background:radial-gradient(circle at 15% 0%,#fff4df,#f1f8e9 45%,#ecf4eb);}
+.world-wrap{border:4px solid #fdf9e8;box-shadow:0 8px 0 #d9e2ca,0 15px 35px #74846938;border-radius:26px}
+.panel{background:#fffcf2;border:1px solid #e7e2cd;box-shadow:0 5px 18px #70876b17}
+.header h1{color:#426847;font-family:Georgia,serif}
+.brand-mark{background:linear-gradient(135deg,#e6f4d7,#f6e6b7);border:2px solid #d5e5c2;border-radius:19px;}
+.tile-option{background:linear-gradient(170deg,#fffef8,#f4f5e8);border-color:#e3e7cf;box-shadow:0 3px 0 #e4e9d8;}
+.tile-option.selected{border-color:#8eb777;background:#edf6df;box-shadow:0 3px 0 #c7dbad,0 0 0 3px #d5edbd}
+.tile-option .emoji{font-size:36px}
+.world-title{background:#fffdf0e6;border:1px solid #e7ead2;box-shadow:0 3px 15px #395e4330}
+.world-hint{background:#fffdefed;border:1px solid #e5e6ca;color:#60785e}
+@media(max-width:550px){.world-wrap{min-height:330px;height:min(46vh,430px)}.tile-option{min-height:95px}}
+.world-title .face{overflow:hidden;background:#f9e8cc}.world-title .face img{width:100%;height:100%;object-fit:cover;object-position:center 24%;transform:scale(1.6) translateY(4px)}.wubby-avatar{overflow:hidden}.wubby-avatar img{width:98%;height:98%;object-fit:contain;object-position:bottom center}
+
+/* v0.5 / Storybook overhaul: tactile surfaces, more breathing room, gentler colors. */
+:root{--ink:#344b3d;--cream:#fff9ec;--line:#e0dfc7;--shadow:0 14px 36px rgba(91,101,56,.16)}
+body{background:radial-gradient(circle at 8% 2%,#fff1d3 0,#f7f4e5 30%,#e7f1e5 100%)}
+.world-wrap{border:5px solid #faf5e4;box-shadow:0 7px 0 #d6e0c2,0 18px 35px rgba(71,102,70,.19);background:#cde9da}
+.panel{border:1px solid #e5dec7;box-shadow:0 5px 14px rgba(106,113,73,.07)}
+.tile-option{border-radius:19px;background:linear-gradient(155deg,#fffdf5,#f0f3e4);box-shadow:0 3px 0 #dfe6d3;}
+.tile-option.selected{border-color:#77aa7a;box-shadow:0 3px 0 #8fb788,0 0 0 4px #dbedc5}
+.tile-option .emoji{font-size:37px;filter:drop-shadow(0 3px 2px #7f967755)}
+.world-title{box-shadow:0 5px 19px #41694b1e}
+.world-title b{font-size:13px}
+.world-hint{background:#fffaf0e7;border:1px solid #e8dcc5}
+@media(max-width:550px){.world-wrap{height:min(48vh,440px);min-height:345px}.world-title{left:9px;top:9px;padding:7px 9px}.world-hint{bottom:10px;left:10px}.zoom{bottom:10px;right:10px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="brand"><div class="brand-mark" aria-hidden="true">🌿</div><div><h1>Wubby's World</h1><p class="subtitle">A little life, a world of possibilities.</p></div></div>
+    <div class="status"><div class="pill">☀️ Day <strong id="day">1</strong></div><div class="pill">🗺️ <strong id="tileTotal">5</strong> / 225 tiles</div><div class="pill">✨ <strong id="discoveries">1</strong> discovered</div></div>
+  </header>
+  <div class="preview-banner" role="status" id="previewBanner"><strong>Browser required:</strong> This is an interactive JavaScript game. If you can still see this notice, your current file preview isn't running the game. Download the HTML file, then open it from your phone's Downloads folder using <strong>Chrome</strong> or another full web browser. Don't play it inside the ChatGPT file preview.</div>
+  <div class="layout">
+    <main class="world-column">
+      <div class="world-wrap" id="worldWrap">
+        <canvas id="world" aria-label="Interactive isometric map of Wubby's world. Choose a tile below then tap a space beside the existing land."></canvas>
+        <div class="preview-cover" id="previewCover"><div class="static-scene">🌳 🏠 🐰</div><strong>Wubby is ready to explore!</strong><p>To see the moving map and play, open this downloaded HTML file in your browser.</p></div>
+        <div class="world-title"><div class="face"><img alt="Wubby" src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22100%22%20height%3D%22100%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cellipse%20cx%3D%2220%22%20cy%3D%2253%22%20rx%3D%2214%22%20ry%3D%2233%22%20fill%3D%22%23bd825c%22/%3E%3Cellipse%20cx%3D%2280%22%20cy%3D%2253%22%20rx%3D%2214%22%20ry%3D%2233%22%20fill%3D%22%23bd825c%22/%3E%3Cellipse%20cx%3D%2220%22%20cy%3D%2255%22%20rx%3D%229%22%20ry%3D%2224%22%20fill%3D%22%23eab5a9%22/%3E%3Cellipse%20cx%3D%2280%22%20cy%3D%2255%22%20rx%3D%229%22%20ry%3D%2224%22%20fill%3D%22%23eab5a9%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2250%22%20rx%3D%2232%22%20ry%3D%2230%22%20fill%3D%22%23dba86f%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2255%22%20rx%3D%2227%22%20ry%3D%2224%22%20fill%3D%22%23fff0cd%22/%3E%3Cellipse%20cx%3D%2239%22%20cy%3D%2251%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%23292d27%22/%3E%3Cellipse%20cx%3D%2262%22%20cy%3D%2251%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%23292d27%22/%3E%3Ccircle%20cx%3D%2237%22%20cy%3D%2249%22%20r%3D%222%22%20fill%3D%22white%22/%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2249%22%20r%3D%222%22%20fill%3D%22white%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2266%22%20rx%3D%225%22%20ry%3D%223.5%22%20fill%3D%22%239b715d%22/%3E%3Cpath%20d%3D%22M44%2072%20Q50%2079%2056%2072%22%20stroke%3D%22%239b715d%22%20fill%3D%22none%22%20stroke-width%3D%222%22/%3E%3Cpath%20d%3D%22M30%2080%20Q51%2093%2070%2080%22%20stroke%3D%22%234a8d6d%22%20fill%3D%22none%22%20stroke-width%3D%226%22/%3E%3C/svg%3E" /></div><div><small>WUBBY IS CURRENTLY</small><b id="activity">Looking around...</b></div></div>
+        <div class="world-hint" id="hint">Choose a tile below, then tap a glowing space next to the land. Drag to look around.</div>
+        <div class="zoom"><button id="zoomOut" title="Zoom out">−</button><button id="zoomIn" title="Zoom in">+</button><button id="recenter" title="Return to Wubby">⌂</button></div>
+        <div id="toast" role="status"></div>
+      </div>
+    </main>
+    <aside class="sidebar">
+      <section class="panel tile-panel"><h2>Build Wubby's world <span class="running-indicator">● Game running</span></h2><p class="sub">Pick one, then place it on the map. Replacing a beloved spot may upset him!</p><div class="tile-bank" id="bank"></div><div class="tile-count"><span>World filled</span><div class="meter-track"><div class="meter-fill" id="worldProgress" style="width:2%"></div></div><span id="worldPercent">2%</span></div></section>
+      <section class="panel power-panel"><h2>Little miracles</h2><p class="sub">Wubby has no idea you're looking after him.</p><div class="sky-controls"><button class="control-btn" id="rain">🌧️ Rain</button><button class="control-btn" id="sun">☀️ Sunshine</button><button class="control-btn primary" id="apple">🍎 Leave an apple</button><button class="control-btn" id="follow">🔍 Find Wubby</button></div></section>
+      <section class="panel status-panel"><h2>Life of Wubby</h2><div class="wubby-panel"><div class="wubby-avatar"><img alt="Wubby" src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22100%22%20height%3D%22100%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cellipse%20cx%3D%2220%22%20cy%3D%2253%22%20rx%3D%2214%22%20ry%3D%2233%22%20fill%3D%22%23bd825c%22/%3E%3Cellipse%20cx%3D%2280%22%20cy%3D%2253%22%20rx%3D%2214%22%20ry%3D%2233%22%20fill%3D%22%23bd825c%22/%3E%3Cellipse%20cx%3D%2220%22%20cy%3D%2255%22%20rx%3D%229%22%20ry%3D%2224%22%20fill%3D%22%23eab5a9%22/%3E%3Cellipse%20cx%3D%2280%22%20cy%3D%2255%22%20rx%3D%229%22%20ry%3D%2224%22%20fill%3D%22%23eab5a9%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2250%22%20rx%3D%2232%22%20ry%3D%2230%22%20fill%3D%22%23dba86f%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2255%22%20rx%3D%2227%22%20ry%3D%2224%22%20fill%3D%22%23fff0cd%22/%3E%3Cellipse%20cx%3D%2239%22%20cy%3D%2251%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%23292d27%22/%3E%3Cellipse%20cx%3D%2262%22%20cy%3D%2251%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%23292d27%22/%3E%3Ccircle%20cx%3D%2237%22%20cy%3D%2249%22%20r%3D%222%22%20fill%3D%22white%22/%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2249%22%20r%3D%222%22%20fill%3D%22white%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2266%22%20rx%3D%225%22%20ry%3D%223.5%22%20fill%3D%22%239b715d%22/%3E%3Cpath%20d%3D%22M44%2072%20Q50%2079%2056%2072%22%20stroke%3D%22%239b715d%22%20fill%3D%22none%22%20stroke-width%3D%222%22/%3E%3Cpath%20d%3D%22M30%2080%20Q51%2093%2070%2080%22%20stroke%3D%22%234a8d6d%22%20fill%3D%22none%22%20stroke-width%3D%226%22/%3E%3C/svg%3E" /></div><div class="wubby-info"><b id="mood">Feeling curious</b><div class="mood-label" id="moodReason">A whole world to discover</div><div class="meter-track"><div class="meter-fill" id="happyFill" style="width:80%"></div></div></div></div><div class="bars"><span>Food</span><div class="meter-track food"><div class="meter-fill" id="foodFill" style="width:75%"></div></div><span id="foodText">75%</span><span>Energy</span><div class="meter-track rest"><div class="meter-fill" id="restFill" style="width:85%"></div></div><span id="restText">85%</span></div></section>
+      <section class="panel diary-panel"><h2>📖 Wubby's diary</h2><p class="sub">Thoughts from an ordinary little life.</p><div class="diary" id="diary"></div></section>
+    </aside>
+  </div>
+  <div class="postscript">
+      <div class="below"><div class="tip">🌿 No deadlines, no game over. Wubby takes care of himself and discovers the world at his own pace.</div><button id="reset" class="linkbtn">Start a new world</button></div>
+      <div class="help"><b>How to play:</b> Pick one of the three landscape tiles. Place it next to an existing tile, or replace an old one. The choice refills automatically. Wubby will explore, remember places he enjoys, eat when he's hungry, and return home to sleep. Try rain, sunshine, or leaving him an apple. Your progress saves automatically on this device.</div>
+  </div>
+</div>
+<script>
+(()=>{'use strict';
+const N=15, HOME=7, TILE_W=112, TILE_H=57, STORE='wubbys-world-2026-v1';
+const C={grass:'#acd987',meadow:'#a7d97b',forest:'#86bf76',orchard:'#b3d883',pond:'#98d6b1',flowers:'#bbd981',garden:'#b8d48c',hill:'#abcfa5',mushroom:'#b1ce84'};
+const LABEL={grass:'Meadow',meadow:'Soft meadow',forest:'Pine forest',orchard:'Apple orchard',pond:'Little pond',flowers:'Flower field',garden:'Veggie garden',hill:'Gentle hill',mushroom:'Mushroom grove'};
+const EMOJI={grass:'🌾',meadow:'🌿',forest:'🌲',orchard:'🍎',pond:'💧',flowers:'🌸',garden:'🥕',hill:'⛰️',mushroom:'🍄'};
+const TILESET=['meadow','forest','orchard','pond','flowers','garden','hill','mushroom'];
+const $=id=>document.getElementById(id), canvas=$('world'),wrap=$('worldWrap'),ctx=canvas.getContext('2d');
+let width=800,height=570,dpr=1,last=performance.now(),elapsed=0,toaster=0,drag=null,hover=null,activeWeather='sun',weatherUntil=0,rainDrops=[];
+const rand=(a,b)=>a+Math.random()*(b-a),ri=(a,b)=>Math.floor(rand(a,b+1)),choose=a=>a[Math.floor(Math.random()*a.length)];
+const clamp=(a,min,max)=>Math.max(min,Math.min(max,a));
+const key=(r,c)=>r*N+c; const pos=k=>({r:Math.floor(k/N),c:k%N});
+const neighbors=(r,c)=>[[r-1,c],[r+1,c],[r,c-1],[r,c+1]].filter(([r,c])=>r>=0&&r<N&&c>=0&&c<N);
+const home=key(HOME,HOME);
+function fresh(){let board=Array(N*N).fill(null);board[home]='home';board[key(7,6)]='grass';board[key(6,7)]='grass';board[key(7,8)]='grass';board[key(8,7)]='grass';return {board,bank:['orchard','flowers','pond'],selected:0,placed:0,day:1,daySeconds:25, happiness:80,food:77,energy:85,visited:{[home]:1},favorite:null,affinity:{},journal:[{day:1,text:'My little house is so cozy. I wonder what lies beyond the garden?'},{day:1,text:'A lovely morning for a walk.'}],wubby:{r:7,c:7,x:7,y:7,from:home,to:home,prog:1,state:'thinking',stateTime:2,speech:'',speechFor:0,goal:null,route:[],lastMemory:'',facing:7,lookFacing:null,lookTime:0,blinkTime:0},apples:0,sky:'sun',weatherTimer:0,discoveries:1};}
+let game=fresh();
+try{const saved=JSON.parse(localStorage.getItem(STORE));if(saved&&saved.board?.length===225&&saved.bank?.length===3&&saved.wubby)game={...fresh(),...saved};}catch(e){}
+// Preserve existing worlds while upgrading old character state.
+game.wubby.facing=Number.isFinite(game.wubby.facing)?game.wubby.facing:7;
+game.wubby.lookFacing=null;game.wubby.lookTime=0;game.wubby.blinkTime=0;
+let zoom=1.08,panX=0,panY=35;
+function save(){try{localStorage.setItem(STORE,JSON.stringify(game));}catch(e){}}
+function toast(t){let e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(toaster);toaster=setTimeout(()=>e.classList.remove('show'),2150);}
+function log(text){if(game.journal[0]?.text===text)return;game.journal.unshift({day:game.day,text});game.journal=game.journal.slice(0,55);renderDiary();save();}
+function speak(s,time=3){game.wubby.speech=s;game.wubby.speechFor=time;}
+function renderDiary(){$('diary').innerHTML=game.journal.slice(0,14).map(e=>`<div class="entry"><small>DAY ${e.day}</small><p>${escapeHTML(e.text)}</p></div>`).join('');}
+function escapeHTML(s){return String(s).replace(/[&<>\"]/g,t=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[t]));}
+function renderBank(){$('bank').innerHTML=game.bank.map((t,i)=>`<button type="button" class="tile-option ${game.selected===i?'selected':''}" data-i="${i}" aria-pressed="${game.selected===i}"><span class="emoji">${EMOJI[t]}</span><span class="name">${LABEL[t]}</span></button>`).join('');$('bank').querySelectorAll('button').forEach(b=>b.onclick=()=>{game.selected=Number(b.dataset.i);renderBank();});}
+function ui(){let count=game.board.filter(Boolean).length; $('day').textContent=game.day;$('tileTotal').textContent=count;$('discoveries').textContent=game.discoveries;$('worldProgress').style.width=(100*count/225)+'%';$('worldPercent').textContent=Math.round(count*100/225)+'%';$('foodFill').style.width=game.food+'%';$('foodText').textContent=Math.round(game.food)+'%';$('restFill').style.width=game.energy+'%';$('restText').textContent=Math.round(game.energy)+'%';$('happyFill').style.width=game.happiness+'%';$('mood').textContent=game.happiness>85?'Feeling wonderful':game.happiness>64?'Feeling content':game.happiness>43?'A little unsettled':'Feeling gloomy';$('moodReason').textContent=game.happiness>74?'Life has its little pleasures':game.happiness>43?'Making the best of things':'Missing something special';$('activity').textContent=({'thinking':'Looking around','walking':'Exploring the neighborhood','enjoy':'Enjoying the scenery','eating':'Having a little snack','sleeping':'Asleep in his cottage','collect':'Gathering something tasty','shelter':'Keeping dry','apple':'Investigating an apple'})[game.wubby.state]||'Out and about';}
+function available(r,c){const v=game.board[key(r,c)];if(v)return true;return neighbors(r,c).some(([rr,cc])=>!!game.board[key(rr,cc)]);}
+function canBuild(r,c){if(r<0||c<0||r>=N||c>=N)return false;const k=key(r,c);if(k===home)return false;if(Math.round(game.wubby.x)===c&&Math.round(game.wubby.y)===r)return false;return available(r,c);}
+function pickTile(){const count=game.placed;const pool=count<8?['meadow','flowers','orchard','forest','pond','garden']:TILESET;return choose(pool);}
+function placement(r,c){if(!canBuild(r,c)){toast(game.board[key(r,c)]==='home'?"Wubby's home stays right here.":'Place beside the existing world.');return;}let k=key(r,c),old=game.board[k],tile=game.bank[game.selected];if(old===tile){toast('That landscape is already here.');return;}
+ const like=game.favorite;if(old&&game.visited[k]>=2){if(old===like){game.happiness=clamp(game.happiness-18,20,100);speak('My favorite spot...',3);log(`Something feels wrong. The ${LABEL[old].toLowerCase()} I loved has disappeared.`);}else {game.happiness=clamp(game.happiness-3,20,100);}}
+ game.board[k]=tile;game.placed++;let dist=Math.abs(r-HOME)+Math.abs(c-HOME);
+ if(tile===like&&dist<=3){game.happiness=clamp(game.happiness+9,0,100);log(`There's a ${LABEL[tile].toLowerCase()} close to home! That makes me happy.`);}
+ game.bank[game.selected]=pickTile(); if(game.placed===1){toast('The world grows! Wubby may discover it soon.');}else toast(old?'A little corner of this world has changed.':'A new part of Wubby’s world appeared!');
+ if(game.placed===3)log('There seems to be more to explore every day. How exciting!');
+ if(game.placed===10)log('This place keeps surprising me. I wonder how far it goes.');
+ if(game.wubby.state==='walking'&&!game.board[game.wubby.to]){game.wubby.to=home;game.wubby.route=[];}
+ renderBank();ui();save();}
+function view(r,c){return {x:width/2+panX+(c-r)*TILE_W*.5*zoom,y:height*.515+panY+(c+r-HOME*2)*TILE_H*.5*zoom};}
+function inv(x,y){const a=(x-width/2-panX)/(TILE_W*.5*zoom),b=(y-height*.515-panY)/(TILE_H*.5*zoom);return {c:Math.round((a+b+HOME*2)/2),r:Math.round((b+HOME*2-a)/2)};}
+function resize(){const rect=wrap.getBoundingClientRect();width=rect.width;height=rect.height;dpr=Math.min(2,window.devicePixelRatio||1);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
+if(typeof ResizeObserver!=='undefined')new ResizeObserver(resize).observe(wrap);
+else window.addEventListener('resize',resize);
+resize();
+function poly(pts,fill,stroke=null,lw=1){ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(...pts[i]);ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();}}
+function ellipse(x,y,rx,ry,fill,stroke=null,lw=1){ctx.beginPath();ctx.ellipse(x,y,Math.max(.1,rx),Math.max(.1,ry),0,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();}}
+function line(x1,y1,x2,y2,color,lw=1){ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.lineCap='round';ctx.stroke();}
+const colorSeed=n=>{let h=Math.sin(n*12.9898)*43758.5453;return h-Math.floor(h);};
+function grassBlades(x,y,s,n=3){for(let i=0;i<n;i++){let dx=(colorSeed(i*31+x*.13+y*.7)-.5)*22*s,dy=(colorSeed(i*71+y*.19)-.5)*8*s;line(x+dx,y+dy,x+dx-2*s,y+dy-4*s,'#78ad69',1.25*s);line(x+dx,y+dy,x+dx+2.5*s,y+dy-4*s,'#7fac5b',1*s);}}
+function drawTree(x,y,s=1,fruit=false,bloom=false){ellipse(x,y+3*s,13*s,5*s,'#4d8b694b');poly([[x-4*s,y],[x-3*s,y-29*s],[x+4*s,y-29*s],[x+5*s,y]],'#946e50');ellipse(x,y-29*s,16*s,19*s,bloom?'#ecb5bf':'#5c9b68');ellipse(x-10*s,y-28*s,13*s,15*s,bloom?'#f6cdd0':'#78b16b');ellipse(x+10*s,y-29*s,12*s,16*s,bloom?'#e8a9b5':'#83b97a');ellipse(x-2*s,y-38*s,15*s,14*s,bloom?'#f1b9c4':'#8fc781');ellipse(x-9*s,y-38*s,5*s,3*s,'#f4f2db77');if(fruit){for(const [a,b] of [[-9,-28],[6,-35],[12,-24],[-1,-45]]){ellipse(x+a*s,y+b*s,3*s,3*s,'#e65848');ellipse(x+(a+1)*s,y+(b-2)*s,1.5*s,1*s,'#94c66c');}}}
+function drawPine(x,y,s=1){ellipse(x,y+2*s,13*s,4*s,'#366a5c33');poly([[x-3*s,y],[x-3*s,y-20*s],[x+3*s,y-20*s],[x+4*s,y]],'#806b4d');poly([[x,y-55*s],[x-21*s,y-20*s],[x+21*s,y-20*s]],'#47896e');poly([[x,y-43*s],[x-19*s,y-11*s],[x+19*s,y-11*s]],'#377b66');poly([[x,y-34*s],[x-20*s,y-7*s],[x+20*s,y-7*s]],'#32745f');line(x-4*s,y-44*s,x-9*s,y-31*s,'#91c6a1',1.3*s)}
+function drawFlower(x,y,s=1,col='#fce5e7'){for(let i=0;i<5;i++){let a=i*Math.PI*2/5;ellipse(x+Math.cos(a)*3.5*s,y+Math.sin(a)*3.5*s,3*s,2.6*s,col);}ellipse(x,y,2.3*s,2.2*s,'#f5cb58');}
+function scene(type,x,y,s,seed){
+  const wob=colorSeed(seed*32)*4-2; ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+  if(type==='home'){
+    ellipse(0,6,32,10,'#6f996344'); poly([[-11,6],[0,13],[15,7],[4,0]],'#d4b989');
+    // foundations, warm stone walls, doorway, a curved moss roof
+    poly([[-23,-4],[0,6],[25,-5],[25,-33],[0,-43],[-23,-32]],'#e8d6a8');poly([[0,6],[25,-5],[25,-33],[0,-21]],'#d3b68d');
+    poly([[-31,-33],[-5,-56],[17,-49],[31,-30],[0,-20]],'#6f9d57');poly([[-31,-33],[-5,-56],[0,-20],[-23,-12]],'#8cb468');
+    poly([[-5,-56],[17,-49],[31,-30],[0,-20]],'#5f8e58');
+    poly([[-10,-30],[0,-20],[10,-25],[8,-39],[-1,-45]],'#8da65c');
+    ellipse(-5,-49,14,5,'#a5cb77');line(-24,-31,-2,-17,'#608653',2.4);
+    poly([[-2,5],[11,1],[11,-20],[2,-27],[-2,-20]],'#845e4d');poly([[0,5],[10,1],[10,-19],[0,-23]],'#ae8059');ellipse(7,-11,1.5,1.5,'#f4da78');
+    poly([[14,-24],[23,-28],[23,-39],[14,-36]],'#f4db86','#b28f57',1.2);
+    poly([[-17,-15],[-10,-18],[-10,-31],[-17,-29]],'#f6d687','#a99370',1);
+    poly([[12,-51],[18,-54],[18,-66],[12,-63]],'#bc9a74');ellipse(15,-66,8,4,'#b8baac77');
+    drawFlower(-29,2,.85,'#fff3c9');drawFlower(26,6,.9,'#ffcad6');
+  } else if(type==='grass'||type==='meadow'){
+    for(let i=0;i<6;i++){let xx=(colorSeed(seed*15+i*3.9)-.5)*65, yy=(colorSeed(seed*7+i*5.2)-.5)*22;grassBlades(xx,yy,.65,2)}
+    if(type==='meadow')for(let i=0;i<5;i++)drawFlower((colorSeed(seed*9+i*11)-.5)*61,(colorSeed(seed*4+i*13)-.5)*23,.55,['#f8cad6','#fbf3bc','#ffffff'][Math.floor(colorSeed(seed*13+i*17)*3)]);
+  }else if(type==='forest'){
+    drawPine(-15,-2,.9);drawPine(15,1,.8);drawPine(3,-4,.62);
+  }else if(type==='orchard'){
+    drawTree(-13,-1,.8,true);drawTree(19,3,.64,true);ellipse(3,4,3,2.3,'#e9684b');
+  }else if(type==='pond'){
+    ellipse(0,0,36,16,'#6dad9b');ellipse(-1,-2,31,13,'#75c9d5');ellipse(-12,-5,12,3.2,'#b9e8e8a0');ellipse(17,2,6,3,'#5fa68b');drawFlower(19,-1,.5,'#f2def3');line(-23,1,-15,2,'#d8faf3',1.2);line(-5,6,7,5,'#d8faf3',1.2);
+  }else if(type==='flowers'){
+    for(let i=0;i<16;i++){let xx=(colorSeed(seed*9+i*3.2)-.5)*76,yy=(colorSeed(seed*6+i*5.3)-.5)*28;drawFlower(xx,yy,.55+colorSeed(i+seed)*.28,['#f6c6d8','#fff3ca','#e9daf7','#f6d89e'][i%4]);}
+  }else if(type==='garden'){
+    poly([[-35,-2],[-7,-14],[17,-4],[-10,8]],'#ac835e');poly([[2,7],[27,-7],[42,-1],[13,12]],'#a17b54');for(let i=0;i<4;i++){drawFlower(-25+i*9,-5-i*1.1,.45,'#efa66c');drawFlower(10+i*7,2-i*1.2,.43,'#f0aa5b');}poly([[-8,3],[6,8],[4,11],[-11,6]],'#84a859');
+  }else if(type==='hill'){
+    poly([[-35,9],[-4,-35],[18,5]],'#95aaa0');poly([[-4,-35],[36,11],[18,5]],'#798d86');poly([[-14,-13],[-4,-35],[5,-19],[-2,-18]],'#edf2e1');grassBlades(-30,8,.6,3);drawFlower(26,7,.6);
+  }else if(type==='mushroom'){
+    drawTree(-14,-3,.68,false,false);for(let i=0;i<5;i++){let xx=(colorSeed(i*9+seed)-.5)*56,yy=(colorSeed(i*15+seed)-.5)*18+4;poly([[xx-2,yy],[xx-2,yy-6],[xx+2,yy-6],[xx+2,yy]],'#f0e3c1');ellipse(xx,yy-7,6,3.5,['#d96d59','#e9af6c','#ca795e'][i%3]);ellipse(xx-2,yy-8,1.4,.8,'#f8e9d1');}
+  }
+  ctx.restore();
+}
+function diamond(x,y,s,fill,highlight=false){let w=TILE_W*zoom/2,h=TILE_H*zoom/2,depth=7*zoom;let pts=[[x,y-h],[x+w,y],[x,y+h],[x-w,y]];poly([[x-w,y],[x,y+h],[x,y+h+depth],[x-w,y+depth]],'#799c6c');poly([[x,y+h],[x+w,y],[x+w,y+depth],[x,y+h+depth]],'#5e956c');poly(pts,fill,'#5a93686b',.9*zoom);if(highlight)poly(pts,null,'#f7f1a8',2.6*zoom);}
+function drawPlaceholder(r,c){let {x,y}=view(r,c),w=TILE_W*.5*zoom,h=TILE_H*.5*zoom;poly([[x,y-h],[x+w,y],[x,y+h],[x-w,y]],'#d7e8db55','#aed4bf77',.8);}
+function drawTile(r,c,type,highlight){let {x,y}=view(r,c);diamond(x,y,zoom,C[type]||'#b8d39a',highlight);scene(type,x,y,zoom,key(r,c)+1);if(!game.visited[key(r,c)]&&type!=='home'){
+ // undiscovered places are visible to the player, but unknown to Wubby
+ }
+}
+function drawWubby(time){let k=game.wubby,{x,y}=view(k.y,k.x);let s=zoom*.82,walking=k.state==='walking',bob=walking?Math.abs(Math.sin(time*10))*2:Math.sin(time*2)*.7;
+ ctx.save();ctx.translate(x,y+1-bob*s);ctx.scale(s,s);
+ ellipse(0,1,12,4,'#45695550');
+ if(walking){line(-5,-1,-6+Math.sin(time*11)*4,6,'#977044',4);line(5,-1,5-Math.sin(time*11)*4,6,'#977044',4);}
+ else {ellipse(-5,5,4,3,'#926f4c');ellipse(5,5,4,3,'#926f4c');}
+ // body, backpack, floppy ears, face
+ ellipse(10,-17,7,13,'#a8744c');ellipse(0,-17,12,14,'#ca945d');ellipse(0,-16,8,9,'#efe1bf');
+ ellipse(-19,-41,7.5,18,'#b98962');ellipse(19,-41,7.5,18,'#b98962');ellipse(-19,-41,4.6,14,'#e7aeab');ellipse(19,-41,4.6,14,'#e7aeab');
+ ellipse(0,-41,22,20,'#d7a66e');ellipse(-4,-44,17,16,'#f8e9c9');ellipse(13,-34,5,5,'#f8e9c9');
+ ellipse(-6,-43,2.8,3.6,'#273a35');ellipse(9,-43,2.8,3.6,'#273a35');ellipse(-7,-44,1.1,1.3,'white');ellipse(8,-44,1.1,1.3,'white');
+ ellipse(1,-36,3.3,2.2,'#7d5b52');line(-1,-33,1,-32,'#805a54',.85);line(1,-32,3,-33,'#805a54',.85);
+ ellipse(-12,-35,4.3,2.3,'#d8858060');ellipse(15,-35,4.3,2.3,'#d8858060');
+ poly([[-9,-26],[7,-25],[10,-21],[-4,-18],[-12,-21]],'#72aa7f');poly([[6,-22],[13,-21],[10,-7],[5,-10]],'#5b8d6b');
+ ctx.restore();
+ if(k.speechFor>0 && k.speech){const size=12;ctx.font='bold 12px Trebuchet MS, sans-serif';let tw=Math.min(180,ctx.measureText(k.speech).width+22),yy=y-70*zoom;ctx.fillStyle='#fffef0f0';ctx.strokeStyle='#dbe2ca';ctx.lineWidth=1;ctx.beginPath();if(ctx.roundRect){ctx.roundRect(x-tw/2,yy-24,tw,25,9);}else{ctx.rect(x-tw/2,yy-24,tw,25);}ctx.fill();ctx.stroke();poly([[x-5,yy+1],[x+5,yy+1],[x,yy+7]],'#fffef0');ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#607b63';ctx.fillText(k.speech,x,yy-11,tw-8);}
+}
+
+// Character art extracted from our Wubby concept design; embedded for offline, single-file play.
+
+
+
+// Visual edition 0.3: Wubby is drawn in eight directions on the game canvas with consistent ears and no raster cut-outs.
+const softGrad=(x,y,r,c1,c2)=>{const g=ctx.createRadialGradient(x-r*.22,y-r*.28,r*.06,x,y,r);g.addColorStop(0,c1);g.addColorStop(1,c2);return g};
+const shadow=(x,y,rx,ry,a=.19)=>ellipse(x,y,rx,ry,`rgba(47,86,49,${a})`);
+function petal(x,y,s,col='#ffe2f1'){
+  line(x,y+2*s,x-1*s,y+6*s,'#59874c',1.5*s);
+  for(let i=0;i<5;i++){const a=i*Math.PI*2/5;ellipse(x+Math.cos(a)*3*s,y+Math.sin(a)*3*s,2.9*s,2.6*s,col);}
+  ellipse(x,y,1.9*s,1.9*s,'#f7c952');
+}
+function pineLux(x,y,s=1){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+  shadow(2,2,17,6,.20);
+  poly([[-3,1],[3,1],[3,-30],[-3,-30]],'#9f7553');
+  for(let j=0;j<3;j++){
+    let yy=-11-j*14,w=20-j*4;
+    poly([[-w,yy],[0,yy-30],[w,yy]],'#2f775d');
+    poly([[-w+2,yy-5],[0,yy-30],[2,yy-2]],j===2?'#84b993':'#609c78');
+    poly([[0,yy-30],[w,yy],[0,yy-6]],j===2?'#34775f':'#286e59');
+    poly([[-w+2,yy-6],[-w-2,yy],[w+2,yy]],null,'#356b52',.8);
+  }
+  ellipse(-7,-36,2.5,1.2,'#d1ead2ad');
+  ctx.restore();
+}
+function leafyLux(x,y,s=1,fruit=false,bloom=false){
+ ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+ shadow(5,4,20,7,.19);
+ poly([[-4,2],[5,2],[5,-29],[-3,-33]],'#9b6548');
+ poly([[-4,0],[0,1],[1,-31],[-3,-33]],'#c18f62');
+ const col=bloom?['#f5c1d6','#f9dbe2','#f0aacb','#f5c8d3']:['#72b76a','#acd46e','#499f68','#8ac66c'];
+ ellipse(-9,-35,20,16,softGrad(-10,-37,21,col[1],col[2]));
+ ellipse(10,-33,19,19,softGrad(8,-36,23,col[1],col[2]));
+ ellipse(0,-47,22,21,softGrad(-6,-53,27,col[1],col[2]));
+ ellipse(-13,-48,13,13,col[0]);ellipse(10,-49,14,15,col[3]);
+ ellipse(-15,-52,7,3,'#edf9bd4f');ellipse(0,-60,11,3,'#e7f9c055');
+ for(let i=0;i<7;i++){let xx=(colorSeed(i*36+x)-.5)*29, yy=-32-(colorSeed(i*66+y)*24);
+  if(fruit){ellipse(xx,yy,3.5,3.5,softGrad(xx-1,yy-1,5,'#ff9b69','#d54348'));line(xx,yy-3,xx+1,yy-5,'#5e7545',.8)}
+  else if(bloom)petal(xx,yy,.55,i%2?'#fff1f4':'#fbe0e6');
+ }
+ ctx.restore();
+}
+function hillLux(x,y){
+  shadow(x,y+5,34,9,.12);
+  poly([[x-36,y+6],[x-17,y-17],[x-6,y-29],[x+19,y-14],[x+36,y+9]],'#699e74');
+  poly([[x-36,y+6],[x-17,y-17],[x-6,y-29],[x+7,y-16],[x-4,y+6]],'#b1d4aa');
+  poly([[x-19,y-14],[x-7,y-27],[x+6,y-17],[x-4,y-20]],'#e9edca');
+  for(let i=0;i<8;i++)grassBlades(x-25+i*7,y+7-i%3*3,.25,2);
+}
+function cottageLux(x,y,s){
+ ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+ shadow(0,10,43,15,.22);
+ // stepping stones and blossoms make the house read as an actual home
+ for(let i=0;i<4;i++){ellipse(-2+i*8,8+i*4,8,3.4,i%2?'#ded2a7':'#e8ddbb');}
+ // cottage's creamy stone walls, two visible facades
+ poly([[-29,-28],[-2,-11],[-2,9],[-29,-6]],'#e9d7a8','#b9a17c',1.2);
+ poly([[-2,-11],[30,-29],[30,-8],[-2,9]],'#f8e6ba','#b9a17c',1.2);
+ // low stones at bottom of walls
+ for(let i=0;i<5;i++){line(-28+i*6,-6+i*3,-24+i*6,-5+i*3,'#cbb88d',.8);}
+ for(let i=0;i<5;i++){line(2+i*5,8-i*3,7+i*5,7-i*3,'#d4c299',.9);}
+ // wooden front door (right wall)
+ poly([[7,4],[19,-3],[19,-24],[7,-16]],'#76513f','#d8bd8a',1.25);
+ poly([[9,3],[17,-2],[17,-21],[9,-16]],'#b67c57');
+ line(12,-16,12,0,'#e6aa77',1);ellipse(15,-8,1.5,1.5,'#ffde79');
+ // warm windows
+ poly([[-20,-12],[-9,-6],[-9,-21],[-20,-26]],'#9d7749','#ead5a2',1);
+ poly([[-18,-14],[-11,-10],[-11,-21],[-18,-24]],'#ffdc88');
+ line(-14,-23,-14,-10,'#cfad69',1);line(-19,-18,-10,-12,'#cfad69',1);
+ poly([[22,-20],[27,-23],[27,-33],[22,-30]],'#ffe399','#a9824e',1);
+ // a larger curved, soft moss-and-thatch roof
+ poly([[-43,-34],[-14,-62],[13,-56],[35,-35],[3,-22]],'#4e8863','#58815b',1.2);
+ poly([[-43,-34],[-14,-62],[3,-22],[-30,-13]],'#74ad67');
+ poly([[-14,-62],[13,-56],[35,-35],[3,-22]],'#447f5f');
+ // roof rim / scalloped green overhang
+ poly([[-43,-34],[-30,-14],[3,-22],[35,-35],[33,-28],[3,-16],[-30,-8],[-43,-28]],'#66985c');
+ poly([[-42,-34],[-14,-61],[4,-24],[-30,-14]],'#90bd69');
+ for(let i=0;i<11;i++){let xx=-35+i*4.4,yy=-34-(i<5?i*4:(10-i)*3);
+  line(xx,yy,xx+5,yy+7,i%2?'#92bb68':'#6aa75e',1.3);}
+ for(let i=0;i<7;i++){let xx=3+i*4.2,yy=-47+i*1.8;line(xx,yy,xx+2,yy+6,'#80ae67',1.2);}
+ // stubby stone chimney rising behind roof
+ poly([[11,-55],[19,-59],[19,-80],[11,-77]],'#b18b70');
+ poly([[19,-59],[25,-55],[25,-78],[19,-80]],'#937260');
+ poly([[9,-79],[19,-84],[27,-79],[18,-75]],'#d5ad81');
+ // flower pots, front garden, lantern
+ ellipse(31,-1,6,3,'#ad704e');poly([[25,-1],[37,-1],[35,6],[27,6]],'#c58661');
+ petal(30,-4,.9,'#ffc5dc');petal(34,-5,.7,'#ffe9aa');
+ ellipse(-34,-4,5,2.5,'#a17d55');petal(-33,-8,.8,'#f1bed7');
+ line(31,-25,33,-28,'#744c39',1.2);ellipse(34,-26,3.5,5,'#ffdb78');
+ // roof moss tuft
+ ellipse(-12,-52,12,4,'#a2c875c4');
+ ctx.restore();
+}
+function sceneLux(type,x,y,s,seed,time){
+ ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+ // environmental micro-textures, consistent across the entire board
+ for(let i=0;i<12;i++){
+   let xx=(colorSeed(seed*19+i*7.2)-.5)*90,yy=(colorSeed(seed*29+i*13.7)-.5)*30;
+   ellipse(xx,yy,.8+colorSeed(seed+i)*1.1,.3,'#eaf6ae7d');
+ }
+ if(type==='home'){
+  ctx.restore();cottageLux(x,y,s);return;
+ }
+ if(type==='grass'||type==='meadow'){
+  for(let i=0;i<21;i++){
+   let xx=(colorSeed(seed*28+i*4.37)-.5)*91,yy=(colorSeed(seed*13+i*8.53)-.5)*36;
+   grassBlades(xx,yy,.28+colorSeed(i*6+seed)*.35,2);
+  }
+  if(type==='meadow')for(let i=0;i<10;i++){
+    const xx=(colorSeed(seed*7+i*5)-.5)*86,yy=(colorSeed(seed*14+i*9)-.5)*29;
+    petal(xx,yy,.55,['#fff5d1','#ffe3ec','#e4defa'][i%3]);
+  }
+ } else if(type==='forest'){
+  pineLux(-25,1,.72);pineLux(5,-2,.97);pineLux(28,8,.6);
+  for(let i=0;i<8;i++)petal(-31+i*8,10+(i%3)*2,.32,'#f9e6d2');
+ }else if(type==='orchard'){
+  leafyLux(-19,-2,.72,true);leafyLux(19,7,.57,true);
+  ellipse(4,9,3.5,2.5,'#d95449');petal(-34,9,.42,'#fff6c4');
+ }else if(type==='pond'){
+  shadow(0,1,44,20,.08);
+  ellipse(0,2,47,21,'#5aa58d');ellipse(0,-1,45,20,'#bfdb94');
+  ellipse(-1,-2,40,17,softGrad(-9,-7,49,'#b6eaf0','#4db6bb'));
+  ellipse(-11,-10,18,5,'#ffffff53');ellipse(7,5,18,3,'#d0ffff32');
+  for(let i=0;i<4;i++){let bx=-30+i*19;line(bx,-5+i%2*6,bx+8,-5+i%2*6,'#d4f5e7aa',1.1);}
+  ellipse(23,3,8,3.5,'#5caa6f');petal(26,0,.55,'#f7d0e5');
+  for(let i=0;i<5;i++){let rx=-40+i*20;line(rx,12,rx-2,4,'#7aab56',.95);line(rx+3,13,rx+3,5,'#6d9c56',1.2);}
+ }else if(type==='flowers'){
+  for(let i=0;i<25;i++){
+   let xx=(colorSeed(seed*43+i*6.72)-.5)*91,yy=(colorSeed(seed*31+i*10.42)-.5)*34;
+   petal(xx,yy,.34+colorSeed(i*27+seed)*.35,['#ffe1f0','#ffe0a6','#f7f3cf','#ded2f3'][i%4]);
+  }
+ }else if(type==='garden'){
+  poly([[-43,1],[-13,-14],[11,-2],[-20,15]],'#9a7656');poly([[1,12],[24,-1],[43,5],[18,20]],'#ad825a');
+  for(let i=0;i<6;i++){
+   let xx=-33+i*6,yy=1-i*1.7;
+   ellipse(xx,yy,4,3,'#74b05f');ellipse(xx-2,yy-3,2,4,'#4d9656');
+   let ax=12+i*4,ay=12-i*1.8;
+   poly([[ax-2,ay],[ax+2,ay],[ax,ay+7]],'#ee9c58');ellipse(ax,ay,3,3,'#77af52');
+  }
+  for(let i=0;i<3;i++)petal(-33+i*32,11,.5,'#fdf5ca');
+ }else if(type==='hill'){
+  ctx.restore();hillLux(x,y);ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+  petal(24,6,.65,'#fce0ec');
+ }else if(type==='mushroom'){
+  leafyLux(-24,0,.5);for(let i=0;i<7;i++){
+   let xx=(colorSeed(seed*22+i*7)-.5)*71,yy=(colorSeed(seed*37+i*12)-.5)*18+5;
+   poly([[xx-2,yy],[xx+3,yy],[xx+2,yy-8],[xx-1,yy-8]],'#f0dfbd');
+   ellipse(xx,yy-8,6,4,i%2?'#e5ab62':'#dc795f');ellipse(xx-2,yy-10,1.3,.9,'#fff5e8');
+  }
+ }
+ // An occasional passing butterfly, as part of the living environment
+ if((seed%7===0||type==='flowers')&&game.sky==='sun'){
+   let fx=26+Math.sin(time*1.8+seed)*5,fy=-17+Math.sin(time*2.7+seed)*3;
+   ellipse(fx-3,fy,3,4,'#ffe59e');ellipse(fx+3,fy,3,4,'#f8cce2');line(fx,fy,fx,fy+4,'#94644b',.8);
+ }
+ ctx.restore();
+}
+function diamondLux(x,y,s,fill,highlight=false){
+ const w=TILE_W*zoom/2,h=TILE_H*zoom/2,d=10*zoom;
+ const top=[[x,y-h],[x+w,y],[x,y+h],[x-w,y]];
+ poly([[x-w,y],[x,y+h],[x,y+h+d],[x-w,y+d]],'#689e6b');
+ poly([[x,y+h],[x+w,y],[x+w,y+d],[x,y+h+d]],'#53885d');
+ const grad=ctx.createLinearGradient(x-w,y-h,x+w,y+h);
+ grad.addColorStop(0,'#c9ec9e');grad.addColorStop(.43,fill);grad.addColorStop(1,'#88c479');
+ poly(top,grad,'#8ab477',.7*zoom);
+ // delicate contour line, subtle clay-like bevel
+ line(x-w+2*zoom,y+1*zoom,x,y+h-2*zoom,'#d4edb676',1.35*zoom);
+ if(highlight){poly(top,'#fff6bc28','#fff4a6',2.6*zoom);}
+}
+function drawTileLux(r,c,type,highlight,time){let {x,y}=view(r,c);diamondStory(x,y,zoom,C[type]||'#b8d39a',highlight,key(r,c));sceneStory(type,x,y,zoom,key(r,c)+1,time);}
+
+/* v0.5 WORLD ART: all terrain drawn as actual game graphics, not concept mockups. */
+function storyGradient(x1,y1,x2,y2,stops){const g=ctx.createLinearGradient(x1,y1,x2,y2);for(const [p,c] of stops)g.addColorStop(p,c);return g;}
+function storyEllipse(x,y,rx,ry,fill,rot=0){ctx.beginPath();ctx.ellipse(x,y,Math.max(.1,rx),Math.max(.1,ry),rot,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();}
+function storyPath(points,fill,stroke=null,lw=1){poly(points,fill,stroke,lw);}
+function storyStroke(points,color,width=1){ctx.beginPath();ctx.moveTo(...points[0]);for(let i=1;i<points.length;i++)ctx.lineTo(...points[i]);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke();}
+function storySeed(seed,i,mult=13){return colorSeed(seed*83.119+i*mult+.43);}
+function storyGrass(seed,n=46){
+ for(let i=0;i<n;i++){
+  const u=storySeed(seed,i),v=storySeed(seed,i,71),x=(u-.5)*93,y=(v-.5)*36;
+  if(Math.abs(x)/53+Math.abs(y)/24>.92)continue;
+  const q=.55+storySeed(seed,i,33)*.55;
+  storyStroke([[x-1*q,y],[x-2.5*q,y-3*q]],'#80b26d',.7*q);storyStroke([[x,y],[x+2.2*q,y-3.8*q]],'#7aaf66',.7*q);
+  if(i%6===0)storyEllipse(x+2,y-2,1.4,1,'#e0e9a8ba');
+ }
+}
+function storyFlower(x,y,s=1,color='#fff5da'){
+ storyStroke([[x,y+1*s],[x-1.3*s,y+5*s]],'#759b54',1.15*s);
+ storyEllipse(x-3*s,y+4*s,2.3*s,1.2*s,'#6eac60',-.6);
+ for(let i=0;i<6;i++){const a=i*Math.PI/3;storyEllipse(x+Math.cos(a)*2.7*s,y+Math.sin(a)*2.7*s,2.3*s,2*s,color,a);}
+ storyEllipse(x,y,2.2*s,2*s,'#efbb5f');storyEllipse(x-.65*s,y-.65*s,.6*s,.6*s,'#fff6d6');
+}
+function storyStone(x,y,s=1){
+ storyEllipse(x,y+2*s,7*s,2.6*s,'#396e5d26');
+ storyPath([[x-7*s,y+1*s],[x-6*s,y-5*s],[x-1*s,y-8*s],[x+7*s,y-4*s],[x+7*s,y+2*s]],'#9ca8a0');
+ storyPath([[x-6*s,y-5*s],[x-1*s,y-8*s],[x+2*s,y-1*s],[x-4*s,y+1*s]],'#d0d4c2');
+ storyPath([[x+2*s,y-1*s],[x+7*s,y-4*s],[x+7*s,y+2*s],[x-4*s,y+1*s]],'#7c9088');
+}
+function storyMushroom(x,y,s=1){
+ storyEllipse(x,y+1*s,7*s,2*s,'#507d5540');
+ storyPath([[x-2*s,y+1*s],[x-2*s,y-8*s],[x+3*s,y-8*s],[x+3*s,y+1*s]],'#f4e1bd');
+ storyEllipse(x,y-8*s,8*s,5*s,'#c95d43');storyEllipse(x-2*s,y-11*s,4*s,1.4*s,'#ee9c6e');
+ for(const [xx,yy] of [[-3,-9],[2,-10],[4,-7]])storyEllipse(x+xx*s,y+yy*s,1.2*s,.8*s,'#fff2d8');
+}
+function storyPine(x,y,s=1,seed=0){
+ ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+ storyEllipse(2,4,19,5,'#3b766643');
+ storyPath([[-4,2],[-4,-33],[5,-33],[5,2]],storyGradient(-3,-34,5,2,[[0,'#a77e54'],[1,'#77573e']]));
+ for(let layer=0;layer<5;layer++){
+   const yt=-69+layer*12,w=9+layer*4.5;
+   storyPath([[0,yt-10],[-w,yt+20],[0,yt+15],[w,yt+20]],layer%2?'#376f5d':'#2f6654','#275f52',.8);
+   storyPath([[0,yt-10],[-w,yt+20],[0,yt+13]],layer%2?'#5f9672':'#4a886b');
+   for(let i=0;i<9;i++){let a=(i-4)*w/5,by=yt+16-Math.abs(a)*.13;storyStroke([[a,by],[a-2,by-4]],layer%2?'#82ad82':'#79aa86',.65);}
+ }
+ storyStroke([[-1,-77],[1,-81]],'#b6cf96',1);
+ ctx.restore();
+}
+function storyTree(x,y,s=1,seed=1,fruit=false,pink=false){
+ ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+ storyEllipse(0,5,24,7,'#557f5134');
+ storyPath([[-5,3],[-5,-35],[-1,-42],[5,-35],[6,3]],storyGradient(-6,0,8,0,[[0,'#98704a'],[.65,'#b8875e'],[1,'#74563e']]));
+ storyStroke([[-1,-19],[-11,-39]],'#8b6745',2.6);storyStroke([[2,-24],[12,-38]],'#936c49',2.5);
+ const lumps=[[-13,-41,17,16],[9,-44,18,19],[-1,-59,19,19],[-21,-57,13,14],[20,-59,13,13],[1,-35,18,15]];
+ for(let j=0;j<lumps.length;j++){
+  const [a,b,rx,ry]=lumps[j],c=pink?['#d99ca5','#e6aeb1','#f4c3c6','#d995a6','#f5cdd0','#e0a4a8'][j]:['#6e9f68','#70a66b','#8fba78','#83b578','#a0c486','#6f9b65'][j];
+  storyEllipse(a,b,rx,ry,c);storyEllipse(a-rx*.23,b-ry*.37,rx*.67,ry*.38,pink?'#ffe0df6b':'#dcf1a13b');
+ }
+ for(let i=0;i<26;i++){
+  let ax=(storySeed(seed,i)*2-1)*30,ay=-34-storySeed(seed,i,91)*42;
+  if(Math.hypot(ax*.8,(ay+51)*1.2)>30)continue;
+  storyEllipse(ax,ay,1.2+storySeed(seed,i,31)*1.3,.7,pink?'#ffe5e4ab':'#bbe1998a');
+ }
+ if(fruit){for(let i=0;i<12;i++){
+  let ax=(storySeed(seed,i,17)*2-1)*27,ay=-37-storySeed(seed,i,47)*37;
+  if(Math.hypot(ax*.75,ay+51)>23)continue;
+  storyEllipse(ax,ay,3.2,3.5,'#c64d3d');storyEllipse(ax-1,ay-1,1.2,1,'#faad7d');
+  storyStroke([[ax,ay-3],[ax+1,ay-5]],'#648652',.8);
+ }}
+ ctx.restore();
+}
+function storyReeds(x,y,s=1){
+ for(let i=0;i<4;i++){
+  let dx=(i-1.5)*4*s,height=(12+(i%2)*5)*s;
+  storyStroke([[x+dx,y],[x+dx-(i%2?2:-2)*s,y-height]],'#5f9561',1.8*s);
+  storyEllipse(x+dx-(i%2?2:-2)*s,y-height,1.8*s,4*s,'#a57546');
+ }
+ storyEllipse(x,y,8*s,2*s,'#72ac69');
+}
+function storyPond(seed,time){
+ storyEllipse(0,4,49,21,'#4a865f40');
+ storyEllipse(0,0,46,19,'#8daa7c');
+ storyEllipse(0,-2,43,17,storyGradient(-20,-15,20,17,[[0,'#8bd9df'],[.55,'#5fb7bc'],[1,'#408f9e']]));
+ storyEllipse(-12,-10,23,5,'#dff9e65e',-.08);storyEllipse(16,5,14,3,'#225f9a2c');
+ for(let i=0;i<4;i++){
+  let x=-25+i*17,y=-5+(i%2)*6,sh=Math.sin(time*.85+i+seed)*2;
+  storyStroke([[x-7,y+sh],[x,y-1+sh],[x+6,y+sh]],'#e5ffff9b',1);
+ }
+ for(const [x,y,s] of [[-20,6,.85],[17,2,.75]]){
+  storyEllipse(x,y,8*s,3.8*s,'#4d9567');storyPath([[x,y],[x+7*s,y-3*s],[x+6*s,y+3*s]],'#6db17b');
+ }
+ storyFlower(18,-2,.75,'#ffe4ee');storyReeds(-35,8,.68);storyReeds(32,8,.64);
+ storyStone(-38,8,.65);storyStone(39,5,.6);
+}
+function storyCottage(){
+ // prominent home: a little rounded timber cottage, orange tiled roof, glowing windows and winding path
+ storyEllipse(1,8,47,17,'#526e4b42');
+ for(let i=0;i<5;i++){
+  const x=-27+i*11,y=8+i*1.3;
+  storyEllipse(x,y,6,3,'#e1cfaa');storyEllipse(x-1,y-1,4,1.7,'#fcf1d9');
+ }
+ // foundations and plaster walls in proper isometric perspective
+ storyPath([[-30,-34],[0,-17],[0,11],[-30,-5]],'#efe1c5','#b89e7a',1.2);
+ storyPath([[0,-17],[32,-33],[32,-5],[0,11]],'#dbc8a7','#aa9475',1.2);
+ storyPath([[-30,-6],[0,10],[32,-5],[32,1],[0,16],[-30,0]],'#ad9d81');
+ storyPath([[-26,-31],[-2,-18],[-2,5],[-26,-7]],'#f5e8cd');
+ storyPath([[3,-18],[29,-31],[29,-7],[3,6]],'#edddbb');
+ // timber framing; curved wooden braces
+ for(const x of [-28,-12])storyStroke([[x,-23+(x+28)*.55],[x,-3+(x+28)*.52]],'#9f7a54',1.7);
+ storyStroke([[-28,-14],[-2,1]],'#a98762',1.7);
+ storyStroke([[3,-7],[29,-21]],'#ac8964',1.7);
+ storyStroke([[29,-31],[29,-6]],'#8a6c4e',2.5);
+ // roof ridge, orange scalloped tiles and eaves
+ storyPath([[-39,-36],[-12,-72],[10,-60],[40,-35],[5,-18]],'#935f42','#784d37',1);
+ storyPath([[-39,-36],[-12,-72],[5,-19],[-32,-12]],storyGradient(-32,-72,9,-9,[[0,'#eab779'],[.53,'#c78051'],[1,'#a76749']]),'#875a41',1.4);
+ storyPath([[-12,-72],[12,-68],[40,-35],[5,-19]],storyGradient(-10,-68,36,-22,[[0,'#f3c58b'],[.55,'#ce8b5c'],[1,'#b8744e']]),'#855943',1.5);
+ for(let row=0;row<6;row++){
+  let t=(row+.55)/6, xa=-37+t*34,ya=-35-t*33,xb=1+t*5,yb=-15-t*5;
+  for(let k=0;k<7;k++){
+   let f=k/7;const x=xa+(xb-xa)*f,y=ya+(yb-ya)*f;
+   storyStroke([[x,y],[x+4.4,y+2]],row%2?'#f0bb7b':'#a76b48',1.35);
+  }
+ }
+ for(let row=0;row<5;row++){
+  let t=(row+.8)/6,xa=-10+t*18,ya=-72+t*48,xb=12+t*27,yb=-68+t*33;
+  for(let k=0;k<6;k++){
+   const f=k/6,x=xa+(xb-xa)*f,y=ya+(yb-ya)*f;
+   storyStroke([[x,y],[x+3,y+3.1]],row%2?'#f1c18c':'#9a603f',1.2);
+  }
+ }
+ storyStroke([[-40,-35],[-32,-11],[5,-18],[40,-35]],'#865741',3.1);
+ storyStroke([[-10,-71],[12,-68],[40,-35]],'#f9d3a3',1.6);
+ // thick stone chimney protruding behind the roof
+ storyPath([[15,-68],[24,-65],[24,-87],[15,-90]],'#bc9c7a');
+ storyPath([[24,-65],[30,-68],[30,-91],[24,-87]],'#937557');
+ storyPath([[13,-90],[23,-95],[32,-91],[24,-86]],'#e2c9a5');
+ storyPath([[18,-90],[23,-92],[27,-90],[23,-88]],'#493e35');
+ storyEllipse(24,-100,6,4,'#d9ddc299');storyEllipse(28,-108,9,5,'#ecf0de66');
+ // round arched entryway on front face
+ ctx.save();ctx.translate(-16,-5);ctx.rotate(-.07);
+ ctx.fillStyle='#77543d';ctx.beginPath();ctx.moveTo(-9,0);ctx.lineTo(-9,-18);ctx.bezierCurveTo(-9,-30,9,-30,9,-18);ctx.lineTo(9,0);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#bf8558';ctx.beginPath();ctx.moveTo(-6,-1);ctx.lineTo(-6,-18);ctx.bezierCurveTo(-6,-25,6,-25,6,-18);ctx.lineTo(6,-1);ctx.closePath();ctx.fill();
+ storyStroke([[0,-23],[0,-2]],'#dba56f',1.4);storyEllipse(3,-13,1.7,1.8,'#ffde88');ctx.restore();
+ // glowing cross windows with wooden frames
+ storyPath([[10,-20],[25,-29],[25,-16],[10,-7]],'#966d48');
+ storyPath([[12,-20],[23,-26],[23,-17],[12,-10]],'#ffe8a6');
+ storyStroke([[18,-23],[18,-13]],'#b18457',1.25);storyStroke([[12,-15],[23,-22]],'#b18457',1.2);
+ storyEllipse(19,-19,9,7,'#ffe5a64a');
+ // climbing vines, little hanging lantern and cottage flower pots
+ for(let i=0;i<11;i++){
+  let x=27-Math.sin(i*.6)*4,y=1-i*4;
+  storyEllipse(x,y,3.4,2.2,i%2?'#6d9b59':'#90b875',.5);
+ }
+ storyStroke([[34,-14],[39,-14],[39,-6]],'#82603d',1);
+ storyEllipse(39,-4,3.6,5,'#ffd486');storyEllipse(39,-4,5.2,6.4,'#ffefb84d');
+ storyEllipse(-33,0,9,4,'#8c684c');storyFlower(-34,-5,1,'#ffe0e4');storyFlower(-27,-3,.9,'#f8e0ad');
+ storyEllipse(36,6,8,3,'#a67453');storyFlower(33,1,.9,'#ffe3ec');storyFlower(40,2,.75,'#fff2ca');
+ // moss along bottom edge to join the tile
+ for(let i=0;i<10;i++){
+  let x=-33+i*8,y=10+Math.sin(i*.9)*3;
+  storyEllipse(x,y,4,1.7,i%2?'#8db66a':'#6e9f5e');
+ }
+}
+function sceneStory(type,x,y,s,seed,time){
+ ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+ storyGrass(seed,type==='forest'?18:38);
+ if(type==='home'){
+  ctx.scale(1.10,1.10);storyCottage();
+ }else if(type==='grass'||type==='meadow'){
+  for(let i=0;i<13;i++){
+   let x=(storySeed(seed,i)-.5)*91,y=(storySeed(seed,i,63)-.5)*31;
+   if(Math.abs(x)/52+Math.abs(y)/24>.86)continue;
+   if(type==='meadow')storyFlower(x,y,.5+storySeed(seed,i,33)*.24,['#f8dee2','#fff1d0','#e4ddf2'][i%3]);
+   else if(i%4===0)storyFlower(x,y,.43,'#fff5d2');
+  }
+  if(seed%4===0)storyStone(19,-2,.44);
+ }else if(type==='forest'){
+  storyPine(-22,2,.72,seed);storyPine(10,0,.9,seed+3);storyPine(35,8,.48,seed+8);
+  storyStone(-7,13,.65);storyMushroom(-34,12,.55);
+ }else if(type==='orchard'){
+  storyTree(-18,1,.72,seed,true);storyTree(20,5,.64,seed+3,true);
+  storyEllipse(0,10,2.4,2.9,'#bd523e');storyFlower(-35,9,.43,'#f8e6c8');
+ }else if(type==='pond'){
+  storyPond(seed,time);
+ }else if(type==='flowers'){
+  for(let i=0;i<31;i++){
+   let x=(storySeed(seed,i,7)-.5)*90,y=(storySeed(seed,i,21)-.5)*33;
+   if(Math.abs(x)/50+Math.abs(y)/22>1)continue;
+   storyFlower(x,y,.4+storySeed(seed,i,43)*.38,['#f7c9d9','#fcf3bf','#f5d5aa','#dbd1f2'][i%4]);
+  }
+  storyStone(29,-5,.48);
+ }else if(type==='garden'){
+  storyPath([[-41,-3],[-18,-16],[5,-7],[-19,9]],'#a7825a','#826c4c',.8);
+  storyPath([[5,7],[29,-7],[43,-2],[18,14]],'#b1885b','#8d704d',.8);
+  for(let i=0;i<7;i++){
+   const x=-31+i*4, y=-3-i*.5;
+   storyEllipse(x,y-1,2.7,2.8,'#4e9259');storyEllipse(x-2,y-2.8,2,2.7,'#83b76a');
+   const ax=14+i*3.7,ay=8-i*.8;
+   storyPath([[ax-2,ay],[ax+2,ay],[ax+1,ay+6]],'#e69b53');storyEllipse(ax,ay,2.4,2.6,'#79ac5f');
+  }
+  storyStone(-38,11,.5);storyFlower(37,10,.6,'#fff2d3');storyFlower(-4,13,.45,'#fbe9db');
+ }else if(type==='hill'){
+  storyEllipse(0,8,39,11,'#668c7450');
+  storyPath([[-40,10],[-5,-43],[29,10]],storyGradient(-25,-30,18,15,[[0,'#b9c5b8'],[.48,'#93a69c'],[1,'#73968c']]));
+  storyPath([[-5,-43],[40,9],[29,10]],'#718e83');
+  storyPath([[-18,-21],[-5,-43],[10,-17],[0,-21]],'#f1f1e5');
+  storyStroke([[-7,-38],[2,-23],[8,-20]],'#d7e0d5',2);
+  storyStone(-30,13,.65);storyFlower(34,9,.55,'#ffe4ea');
+ }else if(type==='mushroom'){
+  storyTree(-22,0,.57,seed+8,false);for(let i=0;i<9;i++){
+   const x=(storySeed(seed,i,17)-.5)*81,y=(storySeed(seed,i,39)-.5)*25+3;
+   storyMushroom(x,y,.45+storySeed(seed,i,91)*.27);
+  }
+ }
+ if((type==='flowers'||type==='meadow'||seed%9===0)&&game.sky==='sun'){
+  const bx=28+Math.sin(time*1.7+seed)*4,by=-21+Math.sin(time*2.8+seed)*3;
+  storyEllipse(bx-3,by,3.1,3.8,'#ffe3a2');storyEllipse(bx+3,by,3.1,3.8,'#f2c2d4');storyStroke([[bx,by],[bx,by+4]],'#785c43',.8);
+ }
+ ctx.restore();
+}
+function diamondStory(x,y,s,color,highlight=false,seed=0){
+ const w=TILE_W*s/2,h=TILE_H*s/2,depth=10*s;
+ const top=[[x,y-h],[x+w,y],[x,y+h],[x-w,y]];
+ storyPath([[x-w,y],[x,y+h],[x,y+h+depth],[x-w,y+depth]],'#99876d');
+ storyPath([[x,y+h],[x+w,y],[x+w,y+depth],[x,y+h+depth]],'#7f775f');
+ for(let i=0;i<11;i++){
+  const t=(i+.5)/11;
+  storyStroke([[x-w+w*t,y+h*t+2*s],[x-w+w*t,y+h*t+depth-1*s]],i%3?'#cbb39455':'#e5d1af64',.95*s);
+  storyStroke([[x+w*t,y+h-h*t+2*s],[x+w*t,y+h-h*t+depth-1*s]],'#d3c19d72',.8*s);
+ }
+ storyPath(top,storyGradient(x-w,y-h,x+w,y+h,[[0,'#d9eead'],[.3,color],[1,'#80b96d']]),'#85b270',.75*s);
+ // Fine watercolor-like ground mottling. Clipped to each isometric diamond.
+ ctx.save();ctx.beginPath();ctx.moveTo(...top[0]);for(let q=1;q<top.length;q++)ctx.lineTo(...top[q]);ctx.closePath();ctx.clip();
+ for(let i=0;i<70;i++){
+  const u=storySeed(seed,i,6.37),v=storySeed(seed,i,24.19),tx=x+(u-.5)*2*w,ty=y+(v-.5)*2*h;
+  const rx=(1.2+storySeed(seed,i,19)*3)*s,ry=(.45+storySeed(seed,i,27)*1.1)*s;
+  storyEllipse(tx,ty,rx,ry,(i%4===0?'#fff8cb':i%4===1?'#4e9568':'#a6cc79')+(i%3===0?'24':'17'));
+ }
+ ctx.restore();
+ // soft grassy edge, individual blades at the rim suggest a miniature diorama
+ for(let i=0;i<13;i++){
+   const t=i/12,xx=x-w+t*w,yy=y+t*h;
+   storyStroke([[xx,yy+.6*s],[xx+1.3*s,yy-2.2*s]],'#c6e89b98',.85*s);
+ }
+ storyStroke([[x-w+2*s,y],[x,y+h-2*s],[x+w-2*s,y]],'#e0f0ab70',1.25*s);
+ if(highlight){storyPath(top,'#fff7bd29','#fff8c0',2.5*s);}
+}
+
+// 8-way physical facing, oriented to the screen: 0 S, 1 SW, 2 W, 3 NW, 4 N, 5 NE, 6 E, 7 SE.
+// Drawing from the same anatomy and palette for every view avoids inconsistent ears and cut-out borders.
+const WUBBY_DIRS=['S','SW','W','NW','N','NE','E','SE'];
+function facingFromScreen(dx,dy){let ang=Math.atan2(-dx,dy);return ((Math.round(ang/(Math.PI/4))%8)+8)%8;}
+function turnTowards(fromX,fromY,toX,toY){let dx=toX-fromX,dy=toY-fromY;return Math.abs(dx)+Math.abs(dy)<.01?null:facingFromScreen(dx,dy);}
+function lookAtTile(k,r,c){const p=view(k.y,k.x),q=view(r,c),f=turnTowards(p.x,p.y,q.x,q.y);if(f!==null){k.facing=f;k.lookFacing=null;k.lookTime=0;}}
+function wubbyShape(time,dir,state){
+ const turn=(dir||0)*Math.PI/4,side=Math.sin(turn),front=Math.cos(turn),ff=Math.max(0,front);
+ const back=Math.max(0,-front),walk=state==='walking',stride=walk?Math.sin(time*12):0;
+ const sway=walk?Math.sin(time*12)*.042:Math.sin(time*1.4)*.022;
+ const blink=state==='sleeping'||(Math.sin(time*1.08+1.2)>.994);
+ // feet and tail are behind the head, but remain visible in all directions
+ const fur=softGrad(-14,-59,81,'#f8daa2','#b87947');
+ const cream=softGrad(-10,-46,63,'#fff5d7','#e6b982');
+ const dark='#644b39';
+ ctx.save();ctx.rotate(sway);
+ // little fluffy tail. Moves behind him in frontal views, peeks around on side views.
+ ellipse(-side*5+front*13,-15,7,7,'#c28d5b');ellipse(-side*5+front*13,-16,5.5,5.5,'#f2d09a');
+ // legs alternately step; visible even when facing away
+ const footX=8*Math.max(.47,Math.abs(front)) ;
+ ellipse(-footX + side*2,-1-(walk?Math.max(0,-stride)*3:0),6.6,4.1,'#a67a55');
+ ellipse(footX + side*2,-1-(walk?Math.max(0,stride)*3:0),6.6,4.1,'#a67a55');
+ // chest/body in the same shape for every angle
+ ellipse(0,-19,16.3,19.4,fur);
+ ellipse(-side*4,-18,11*ff+4.5,13,front>.1?cream:'#cc986c');
+ // satchel always on Wubby's left side, following rotation
+ let bagX=front>=0?14-side*8:-12-side*5;
+ ellipse(bagX,-15,6.4,8.8,'#a9754e');ellipse(bagX,-14,4.6,6.6,'#bd8a5a');
+ line(bagX-2,-19,bagX+3,-19,'#e7bd7d',1.4);
+ // swinging arms/hands
+ ellipse(-14+side*2,-19 + (walk?stride*2.8:0),5.5,9,'#cf9563');
+ ellipse(14+side*2,-19 - (walk?stride*2.8:0),5.5,9,'#c98d5d');
+ ellipse(-14+side*2,-12+(walk?stride*2.8:0),3.7,4,'#f1c695');
+ ellipse(14+side*2,-12-(walk?stride*2.8:0),3.7,4,'#f1c695');
+ // neck scarf: back has visible tied tails; front wraps around the belly
+ if(back>.3){
+   poly([[-12,-30],[11,-30],[10,-25],[-11,-25]],'#5a9573');
+   poly([[1,-27],[6,-26],[10,-14],[4,-13]],'#4d8566');
+ } else {
+   poly([[-12,-30],[7,-29],[12,-25],[2,-23],[-13,-26]],'#609b78');
+   poly([[5,-26],[12,-24],[10,-12],[5,-13]],'#3e805f');
+ }
+ // ears drawn consistently: far ear first, close ear last; both exist in all 8 directions.
+ const hx=side*-2,hy=-48;
+ function ear(x,y,near,offset){
+  ctx.save();ctx.translate(x,y);ctx.rotate(offset + Math.sin(time*(walk?6:1.8)+x*.15)*.045);
+  const eg=softGrad(-8,-12,31,near?'#e7b482':'#dba370','#a8754c');
+  ellipse(0,1,8.5*(near?1:.9),19,eg);
+  if(front>.15)ellipse(0,2,5*(near?1:.85),14,'#e9b4a4');
+  else line(-2,-9,3,8,'#bb865b',1.2);
+  ctx.restore();
+ }
+ // Opposite ears project behind the head when turning, no missing one-ear angle.
+ const leftX=hx-21*Math.abs(front)-side*5;
+ const rightX=hx+21*Math.abs(front)-side*5;
+ const farIsLeft=side<0;
+ ear(farIsLeft?leftX:rightX,hy-1,false,farIsLeft?-.24:.24);
+ // broad head with fur-edge and consistent crown tuft
+ const headGrad=softGrad(-13,-57,56,'#f9dba7','#c18a58');
+ ellipse(hx,hy,22.5,22,headGrad);
+ for(let j=0;j<17;j++){
+   const a=j*Math.PI*2/17;
+   if(a>Math.PI*.17&&a<Math.PI*.84)continue;
+   let xx=hx+Math.cos(a)*21,yy=hy+Math.sin(a)*20;
+   line(xx,yy,xx+Math.cos(a)*2.5,yy+Math.sin(a)*2.2,j%3===0?'#e9bd87':'#d7a36e',.65);
+ }
+ poly([[hx-7,hy-20],[hx-3,hy-29],[hx+1,hy-23],[hx+6,hy-28],[hx+4,hy-20]],'#cc965d');
+ if(front>-.13){
+   // Face projects to the direction of travel; 3/4 and side poses show fewer features.
+   const fx=hx-side*9,fw=16.5*Math.max(.5,ff),fy=hy+1;
+   ellipse(fx,fy,fw,16.5,cream);
+   let mouthX=fx-side*5;
+   if(ff>.57){
+     const span=8.2*ff;
+     for(const n of [-1,1]){
+       let ex=fx+n*span-side*3;
+       if(blink)line(ex-2,hy-3,ex+2,hy-3,dark,1.4);
+       else {ellipse(ex,hy-3,3.45,4.35,'#272b28');ellipse(ex-1,hy-5.2,1.2,1.45,'#ffffff');}
+     }
+     ellipse(fx-12*ff,hy+7,4.5,2.3,'#edaaa3a0');
+     ellipse(fx+12*ff,hy+7,4.5,2.3,'#edaaa3a0');
+   }else{
+     // only the nearer eye is seen at a true side view
+     const eyeX=fx-side*4;
+     if(blink)line(eyeX-1.5,hy-3,eyeX+2.5,hy-3,dark,1.5);
+     else {ellipse(eyeX,hy-4,3.5,4.4,'#272b28');ellipse(eyeX-1,hy-6,1.2,1.5,'#ffffff');}
+   }
+   ellipse(mouthX,hy+6,3.65,2.7,'#8e6455');
+   if(state!=='sleeping'){
+     line(mouthX-2,hy+10,mouthX,hy+11.5,'#8d6857',1);
+     line(mouthX,hy+11.5,mouthX+2,hy+10,'#8d6857',1);
+   }
+ }else{
+   // back of Wubby's head: a little fur swirl, not a face pasted toward the viewer
+   ctx.strokeStyle='#dfae7d';ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(hx-3,hy-3,8,-.1,Math.PI*1.25);ctx.stroke();
+   ellipse(hx+3,hy+2,2,2,'#d8a473');
+ }
+ // near ear overlays the rim of the head; intentional, natural depth.
+ ear(farIsLeft?rightX:leftX,hy-1,true,farIsLeft?.25:-.25);
+ // subtle head highlights and warm fur texture
+ ctx.restore();
+}
+function wubbyLux(time){
+ const k=game.wubby,{x,y}=view(k.y,k.x),walking=k.state==='walking';
+ const dir=(Number.isFinite(k.lookFacing)&&k.lookTime>0)?k.lookFacing:(Number.isFinite(k.facing)?k.facing:7);
+ const bob=walking?Math.abs(Math.sin(time*12))*1.7:Math.sin(time*1.5)*.35;
+ const s=zoom*.52;
+ shadow(x,y+3*zoom,9*zoom,3.3*zoom,.24);
+ ctx.save();ctx.translate(x,y+4*zoom-bob*zoom);ctx.scale(s,s);
+ wubbyShape(time,dir,k.state);ctx.restore();
+ if(k.speechFor>0&&k.speech){ctx.font='bold 12px Trebuchet MS, sans-serif';let tw=Math.min(184,ctx.measureText(k.speech).width+22),yy=y-53*zoom;
+   ctx.fillStyle='#fffdf4fa';ctx.strokeStyle='#cfdcb9';ctx.lineWidth=1.2;
+   ctx.beginPath();ctx.roundRect?ctx.roundRect(x-tw/2,yy-25,tw,27,10):ctx.rect(x-tw/2,yy-25,tw,27);ctx.fill();ctx.stroke();
+   poly([[x-4,yy+1],[x+4,yy+1],[x,yy+7]],'#fffdf4');ctx.fillStyle='#536e59';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(k.speech,x,yy-12,tw-9);
+ }
+}
+function draw(time){ctx.clearRect(0,0,width,height);
+ let bg=ctx.createLinearGradient(0,0,0,height);bg.addColorStop(0,'#c5e9e5');bg.addColorStop(.48,'#e5f4df');bg.addColorStop(1,'#faf0d2');ctx.fillStyle=bg;ctx.fillRect(0,0,width,height);
+ // ambient sparkles floating beyond the miniature world
+ for(let i=0;i<31;i++){let x=((colorSeed(i*54)*width+time*(i%3+1)*2)%(width+25)),y=colorSeed(i*99)*height;ellipse(x,y,1.5,1.5,'#ffffff8c');}
+ const visible=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){let {x,y}=view(r,c);if(x<-110||x>width+110||y<-110||y>height+110)continue;const type=game.board[key(r,c)];if(type)visible.push([r,c,type]);else if(available(r,c))drawPlaceholder(r,c);}
+ visible.sort((a,b)=>(a[0]+a[1])-(b[0]+b[1]));for(const [r,c,t] of visible)drawTileLux(r,c,t,hover?.r===r&&hover?.c===c,time);
+ if(hover&&canBuild(hover.r,hover.c)){let {x,y}=view(hover.r,hover.c),t=game.bank[game.selected];ctx.globalAlpha=.50;diamondStory(x,y,zoom,'#d5f4bb',true,key(hover.r,hover.c));sceneStory(t,x,y,zoom,key(hover.r,hover.c)+1,time);ctx.globalAlpha=1;}
+ // small apple gift appears in the vicinity of Wubby
+ if(game.apples){let {x,y}=view(game.wubby.y,game.wubby.x);ellipse(x+19*zoom,y+3*zoom,4.2*zoom,4*zoom,'#de5d48');line(x+20*zoom,y-.5*zoom,x+21*zoom,y-5*zoom,'#688f56',1.5*zoom);}
+ wubbyLux(time);
+ if(game.sky==='rain'){
+   ctx.fillStyle='#6985a11e';ctx.fillRect(0,0,width,height);for(let d of rainDrops){line(d.x,d.y,d.x-4,d.y+13,'#a5d2dabc',1.3);d.y+=d.speed;if(d.y>height){d.y=-20;d.x=rand(0,width)}}
+ }
+ let shade=game.daySeconds>88?Math.sin((game.daySeconds-88)/32*Math.PI)*.15:0;if(shade){ctx.fillStyle=`rgba(60,71,111,${shade})`;ctx.fillRect(0,0,width,height)}
+}
+function shortest(start,target){if(start===target)return[];let prev=new Map([[start,-1]]),q=[start];for(let i=0;i<q.length;i++){let k=q[i],{r,c}=pos(k);for(let [rr,cc] of neighbors(r,c)){let nk=key(rr,cc);if(!game.board[nk]||prev.has(nk))continue;prev.set(nk,k);q.push(nk);if(nk===target){let path=[],p=nk;while(p!==start){path.unshift(p);p=prev.get(p);}return path;}}}return[];}
+function decide(){let k=game.wubby,where=key(Math.round(k.y),Math.round(k.x));if(!game.board[where])where=home;
+ if(game.energy<24){head(home,'sleeping');return;}
+ if(game.food<35){let foods=game.board.map((t,i)=>(['orchard','garden','mushroom'].includes(t)?i:-1)).filter(i=>i>=0);if(foods.length){foods.sort((a,b)=>shortest(where,a).length-shortest(where,b).length);head(foods[0],'collect');}else head(home,'eating');return;}
+ if(game.sky==='rain'&&Math.random()<.55){head(home,'shelter');return;}
+ let possible=game.board.map((t,i)=>t?i:-1).filter(i=>i>=0&&i!==where);
+ if(!possible.length){rest('thinking',2);return;}
+ let unexplored=possible.filter(i=>!game.visited[i]);let favorite=possible.filter(i=>game.board[i]===game.favorite);
+ let target=unexplored.length&&Math.random()<.62?choose(unexplored):favorite.length&&Math.random()<.42?choose(favorite):choose(possible);
+ head(target,'enjoy');
+}
+function head(target,reason){let k=game.wubby,here=key(Math.round(k.y),Math.round(k.x)),route=shortest(here,target);k.goal=target;k.intent=reason;k.route=route;if(!route.length){if(here===target)arrive();else rest('thinking',1.4);return;}step();}
+function step(){let k=game.wubby;k.from=key(Math.round(k.y),Math.round(k.x));k.to=k.route.shift();
+ const a=pos(k.from),b=pos(k.to),dx=(b.c-a.c)-(b.r-a.r),dy=(b.c-a.c)+(b.r-a.r);
+ k.facing=facingFromScreen(dx,dy*.5);k.lookFacing=null;k.lookTime=0;
+ k.prog=0;k.state='walking';}
+
+function rest(state,time){let k=game.wubby;k.state=state;k.stateTime=time;}
+function arrive(){let k=game.wubby,tile=game.board[k.goal],p=k.goal;
+  // Turn toward a nearby environmental feature, or the cottage when coming home.
+  if(k.intent==='sleeping'||k.intent==='eating'||k.intent==='shelter') {k.facing=3;}
+  else if(k.intent==='collect') {k.facing=5;}
+  else if(k.intent==='enjoy'){ k.facing=(p*7+game.day*3)%8; }
+  if(k.intent==='sleeping'){
+   rest('sleeping',8);speak('Zzz...',4);if(Math.random()<.3)log('Nothing beats my own little bed after a long walk.');return;
+ }if(k.intent==='eating'){
+   game.food=clamp(game.food+52,0,100);rest('eating',3.1);speak('Mmm, breakfast!',3);log('A nice snack at home. I always keep something in the cupboard.');return;
+ }if(k.intent==='collect'){
+   game.food=clamp(game.food+43,0,100);rest('collect',3.2);speak(tile==='orchard'?'Fresh apples!':'Something tasty!',3);if(Math.random()<.28)log(tile==='orchard'?'Picked a sweet apple from the orchard. Delicious!':'Found a little treat growing nearby.');return;
+ }if(k.intent==='shelter'){rest('shelter',4);speak('Nice and dry.',3);return;}
+ rest('enjoy',rand(1.7,4.1));let visits=game.visited[p]||0;game.visited[p]=visits+1;
+ if(!visits){game.discoveries++;let intros={home:'Home, sweet home.',grass:'Some soft grass to sit on.',meadow:'What a peaceful little meadow!',forest:'A shady grove of pine trees. How lovely!',orchard:'Apples! I wonder if they taste good.',pond:'A little pond. The water sparkles.',flowers:'Look at all these beautiful flowers!',garden:'A garden full of tasty things!',hill:'From up here, everything looks so small.',mushroom:'Mushrooms! I should remember this place.'};speak(intros[tile]?.slice(0,26)||'What a discovery!',3);log(intros[tile]||'I found a new place!');game.happiness=clamp(game.happiness+1.7,10,100);}
+ else if(visits>=3&&tile!=='home'){
+  game.affinity[tile]=(game.affinity[tile]||0)+1;
+  if(!game.favorite||game.affinity[tile]>game.affinity[game.favorite]+2){game.favorite=tile;log(`I think ${LABEL[tile].toLowerCase()} might be my favorite place of all.`);speak('I love it here!',3);game.happiness=clamp(game.happiness+4,0,100);}
+ }
+ if(tile==='pond'){speak('So peaceful...',2.3);game.happiness=clamp(game.happiness+1,0,100);}
+ if(tile==='flowers'){game.happiness=clamp(game.happiness+1,0,100)}
+}
+function update(dt){let k=game.wubby;game.daySeconds+=dt; if(game.daySeconds>=120){game.daySeconds-=120;game.day++;if(game.day%3===0)log('Another day in this curious little world. I wonder what I might find next.');save();}
+ if(game.sky==='rain'){game.weatherTimer-=dt;if(game.weatherTimer<=0){game.sky='sun';toast('The clouds drifted away.');}}
+ k.speechFor=Math.max(0,k.speechFor-dt);
+  if(k.state!=='walking'&&k.state!=='sleeping'){
+    if(k.lookTime>0){k.lookTime-=dt;if(k.lookTime<=0)k.lookFacing=null;}
+    else if(Math.random()<dt*.065){k.lookFacing=(k.facing+(Math.random()<.5?1:7))%8;k.lookTime=1.1+Math.random()*1.8;}
+  } else {k.lookFacing=null;k.lookTime=0;}
+
+ game.food=clamp(game.food-dt*(k.state==='sleeping'?.045:.19),0,100);
+ if(k.state!=='sleeping')game.energy=clamp(game.energy-dt*(k.state==='walking'?.24:.16),0,100);
+ if(k.state==='walking'){
+  if(!game.board[k.to]){k.route=[];k.x=Math.round(k.x);k.y=Math.round(k.y);rest('thinking',1);}
+  else {let from=pos(k.from),to=pos(k.to);k.prog+=dt/(.75/Math.max(.75,zoom));let p=clamp(k.prog,0,1);k.x=from.c+(to.c-from.c)*p;k.y=from.r+(to.r-from.r)*p;if(k.prog>=1){k.x=to.c;k.y=to.r;if(k.route.length)step();else arrive();}}
+ }else{ k.stateTime-=dt;if(k.state==='sleeping'){game.energy=clamp(game.energy+dt*9,0,100);}if(k.stateTime<=0){if(k.state==='sleeping')game.energy=Math.max(game.energy,90);if(game.apples>0){game.apples--;game.food=clamp(game.food+22,0,100);speak('An apple! Lucky me.',3);rest('apple',2.5);log('Found an apple outside. A lovely surprise!');}
+ else decide();}}
+ if(game.happiness<70)game.happiness=clamp(game.happiness+dt*.025,0,100);
+ elapsed+=dt;if(elapsed>=.35){elapsed=0;ui();}
+}
+function frame(now){let dt=clamp((now-last)/1000,0,.08);last=now;update(dt);draw(now/1000);requestAnimationFrame(frame);}
+canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY,px:panX,py:panY,moved:false};canvas.classList.add('pressing');});
+canvas.addEventListener('pointermove',e=>{let rect=canvas.getBoundingClientRect();if(drag){let dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>8)drag.moved=true;if(drag.moved){panX=clamp(drag.px+dx,-1100,1100);panY=clamp(drag.py+dy,-900,900);hover=null;} }else{let p=inv(e.clientX-rect.left,e.clientY-rect.top);hover=p.r>=0&&p.c>=0&&p.r<N&&p.c<N?p:null;}});
+canvas.addEventListener('pointerup',e=>{canvas.classList.remove('pressing');if(!drag)return;const wasMove=drag.moved;drag=null;if(wasMove)return;let rect=canvas.getBoundingClientRect(),p=inv(e.clientX-rect.left,e.clientY-rect.top);placement(p.r,p.c);});
+canvas.addEventListener('pointercancel',()=>{drag=null;canvas.classList.remove('pressing');});
+canvas.addEventListener('pointerleave',()=>{if(!drag)hover=null;});
+canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=clamp(zoom+(e.deltaY<0?.09:-.09),.43,1.7);},{passive:false});
+$('zoomOut').onclick=()=>zoom=clamp(zoom-.17,.43,1.7);$('zoomIn').onclick=()=>zoom=clamp(zoom+.17,.43,1.7);
+function recenter(){panX=0;panY=35;zoom=1.08;}
+$('recenter').onclick=recenter;$('follow').onclick=()=>{let k=game.wubby;const p=view(k.y,k.x);panX+=width/2-p.x;panY+=height*.49-p.y;toast('Here is Wubby!');};
+$('rain').onclick=()=>{game.sky='rain';game.weatherTimer=19;rainDrops=Array.from({length:90},()=>({x:rand(0,width),y:rand(0,height),speed:rand(3,10)}));toast('A gentle shower begins.');if(game.wubby.state==='enjoy')speak('Rain! Better find a roof.',3);log('A sudden shower! The trees must be enjoying it.');save();};
+$('sun').onclick=()=>{game.sky='sun';game.weatherTimer=0;toast('The sun comes out.');speak('What lovely sunshine.',2.5);save();};
+$('apple').onclick=()=>{game.apples=Math.min(4,game.apples+1);toast('A little apple has appeared near Wubby.');save();};
+$('reset').onclick=()=>{if(!confirm('Start a new world? Your current land and Wubby’s diary will be replaced.'))return;game=fresh();recenter();renderBank();renderDiary();ui();save();toast('A fresh little world begins.');};
+renderBank();renderDiary();ui();document.body.classList.add('game-ready');rainDrops=Array.from({length:90},()=>({x:rand(0,width),y:rand(0,height),speed:rand(3,10)}));requestAnimationFrame(frame);
+setInterval(save,8000);
+})();
+</script>
+</body>
+</html>
