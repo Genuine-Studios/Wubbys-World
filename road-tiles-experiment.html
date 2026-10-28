@@ -135,6 +135,9 @@ body{background:radial-gradient(circle at 8% 2%,#fff1d3 0,#f7f4e5 30%,#e7f1e5 10
 .tile-option.road-card{padding:5px 3px;min-height:96px}
 .tile-option:focus-visible,.mode-switch:focus-visible{outline:3px solid #efba61}
 .mode-switch:disabled{opacity:.38}
+.milestone-info{font-size:11px;line-height:1.5;color:#6b806a;margin:8px 0 0}
+.wubby-build-notice{position:absolute;z-index:15;top:75px;left:50%;transform:translateX(-50%) translateY(-9px);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;background:#fff9e8;border:2px solid #e0c888;box-shadow:0 9px 25px #27462c33;padding:12px 18px;border-radius:16px;color:#456449;font-size:13px;text-align:center;max-width:min(88%,410px);font-weight:750}
+.wubby-build-notice.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
@@ -158,7 +161,7 @@ body{background:radial-gradient(circle at 8% 2%,#fff1d3 0,#f7f4e5 30%,#e7f1e5 10
         <div class="world-title"><div class="face"><img alt="Wubby" src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22100%22%20height%3D%22100%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cellipse%20cx%3D%2220%22%20cy%3D%2253%22%20rx%3D%2214%22%20ry%3D%2233%22%20fill%3D%22%23bd825c%22/%3E%3Cellipse%20cx%3D%2280%22%20cy%3D%2253%22%20rx%3D%2214%22%20ry%3D%2233%22%20fill%3D%22%23bd825c%22/%3E%3Cellipse%20cx%3D%2220%22%20cy%3D%2255%22%20rx%3D%229%22%20ry%3D%2224%22%20fill%3D%22%23eab5a9%22/%3E%3Cellipse%20cx%3D%2280%22%20cy%3D%2255%22%20rx%3D%229%22%20ry%3D%2224%22%20fill%3D%22%23eab5a9%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2250%22%20rx%3D%2232%22%20ry%3D%2230%22%20fill%3D%22%23dba86f%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2255%22%20rx%3D%2227%22%20ry%3D%2224%22%20fill%3D%22%23fff0cd%22/%3E%3Cellipse%20cx%3D%2239%22%20cy%3D%2251%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%23292d27%22/%3E%3Cellipse%20cx%3D%2262%22%20cy%3D%2251%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%23292d27%22/%3E%3Ccircle%20cx%3D%2237%22%20cy%3D%2249%22%20r%3D%222%22%20fill%3D%22white%22/%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2249%22%20r%3D%222%22%20fill%3D%22white%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2266%22%20rx%3D%225%22%20ry%3D%223.5%22%20fill%3D%22%239b715d%22/%3E%3Cpath%20d%3D%22M44%2072%20Q50%2079%2056%2072%22%20stroke%3D%22%239b715d%22%20fill%3D%22none%22%20stroke-width%3D%222%22/%3E%3Cpath%20d%3D%22M30%2080%20Q51%2093%2070%2080%22%20stroke%3D%22%234a8d6d%22%20fill%3D%22none%22%20stroke-width%3D%226%22/%3E%3C/svg%3E" /></div><div><small>WUBBY IS CURRENTLY</small><b id="activity">Looking around...</b></div></div>
         <div class="world-hint" id="hint">Choose one of three tiles. Tap glowing ground beside the land to build. Replace existing tiles, too.</div>
         <div class="zoom"><button id="zoomOut" title="Zoom out">−</button><button id="zoomIn" title="Zoom in">+</button><button id="recenter" title="Return to Wubby">⌂</button></div>
-        <div id="toast" role="status"></div>
+        <div id="toast" role="status"></div><div id="wubbyBuildNotice" class="wubby-build-notice" role="status" aria-live="polite"></div>
       </div>
     </main>
     <aside class="sidebar">
@@ -168,7 +171,7 @@ body{background:radial-gradient(circle at 8% 2%,#fff1d3 0,#f7f4e5 30%,#e7f1e5 10
  <div class="road-controls"><button type="button" id="rotateLeft" class="mode-switch">↶ 90°</button>
  <span id="roadOrientation">Kies een wegstuk</span>
  <button type="button" id="rotateRight" class="mode-switch">↷ 90°</button></div>
- </div><div class="tile-unlock"><strong id="tileUnlockLabel"></strong><div class="catalog-chips" id="tileCatalog"></div></div><div class="tile-count"><span>World filled</span><div class="meter-track"><div class="meter-fill" id="worldProgress" style="width:2%"></div></div><span id="worldPercent">2%</span></div></section>
+ </div><div class="tile-unlock"><strong id="tileUnlockLabel"></strong><div class="catalog-chips" id="tileCatalog"></div><p id="milestoneInfo" class="milestone-info"></p></div><div class="tile-count"><span>World filled</span><div class="meter-track"><div class="meter-fill" id="worldProgress" style="width:2%"></div></div><span id="worldPercent">2%</span></div></section>
       <section class="panel power-panel"><h2>Little miracles</h2><p class="sub">Wubby has no idea you're looking after him.</p><div class="sky-controls"><button class="control-btn" id="rain">🌧️ Rain</button><button class="control-btn" id="sun">☀️ Sunshine</button><button class="control-btn primary" id="apple">🍎 Leave an apple</button><button class="control-btn" id="follow">🔍 Find Wubby</button></div></section>
       <section class="panel status-panel"><h2>Life of Wubby</h2><div class="wubby-panel"><div class="wubby-avatar"><img alt="Wubby" src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22100%22%20height%3D%22100%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cellipse%20cx%3D%2220%22%20cy%3D%2253%22%20rx%3D%2214%22%20ry%3D%2233%22%20fill%3D%22%23bd825c%22/%3E%3Cellipse%20cx%3D%2280%22%20cy%3D%2253%22%20rx%3D%2214%22%20ry%3D%2233%22%20fill%3D%22%23bd825c%22/%3E%3Cellipse%20cx%3D%2220%22%20cy%3D%2255%22%20rx%3D%229%22%20ry%3D%2224%22%20fill%3D%22%23eab5a9%22/%3E%3Cellipse%20cx%3D%2280%22%20cy%3D%2255%22%20rx%3D%229%22%20ry%3D%2224%22%20fill%3D%22%23eab5a9%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2250%22%20rx%3D%2232%22%20ry%3D%2230%22%20fill%3D%22%23dba86f%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2255%22%20rx%3D%2227%22%20ry%3D%2224%22%20fill%3D%22%23fff0cd%22/%3E%3Cellipse%20cx%3D%2239%22%20cy%3D%2251%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%23292d27%22/%3E%3Cellipse%20cx%3D%2262%22%20cy%3D%2251%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%23292d27%22/%3E%3Ccircle%20cx%3D%2237%22%20cy%3D%2249%22%20r%3D%222%22%20fill%3D%22white%22/%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2249%22%20r%3D%222%22%20fill%3D%22white%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2266%22%20rx%3D%225%22%20ry%3D%223.5%22%20fill%3D%22%239b715d%22/%3E%3Cpath%20d%3D%22M44%2072%20Q50%2079%2056%2072%22%20stroke%3D%22%239b715d%22%20fill%3D%22none%22%20stroke-width%3D%222%22/%3E%3Cpath%20d%3D%22M30%2080%20Q51%2093%2070%2080%22%20stroke%3D%22%234a8d6d%22%20fill%3D%22none%22%20stroke-width%3D%226%22/%3E%3C/svg%3E" /></div><div class="wubby-info"><b id="mood">Feeling curious</b><div class="mood-label" id="moodReason">A whole world to discover</div><div class="meter-track"><div class="meter-fill" id="happyFill" style="width:80%"></div></div></div></div><div class="bars"><span>Food</span><div class="meter-track food"><div class="meter-fill" id="foodFill" style="width:75%"></div></div><span id="foodText">75%</span><span>Energy</span><div class="meter-track rest"><div class="meter-fill" id="restFill" style="width:85%"></div></div><span id="restText">85%</span></div></section>
       <section class="panel activity-panel"><h2 id="activityHeading">🌱 Wubby’s adventures</h2><p class="sub" id="activitySub">Wubby invents his own activities.</p><div class="activity-count" id="activityCount"></div><div class="activity-list" id="activityList"></div></section><section class="panel diary-panel"><h2>📖 Wubby's diary</h2><p class="sub">Thoughts from an ordinary little life.</p><div class="diary" id="diary"></div></section>
@@ -182,10 +185,14 @@ body{background:radial-gradient(circle at 8% 2%,#fff1d3 0,#f7f4e5 30%,#e7f1e5 10
 <script>
 (()=>{'use strict';
 const N=31, HOME=15, TILE_W=112, TILE_H=57, STORE='wubbys-world-road-selection-v1', SOURCE_STORE='wubbys-world-pathways-31x31-v1', LIVE_STORE='wubbys-world-real-tile-art-test-v1';
-const C={grass:'#acd987',meadow:'#a7d97b',forest:'#86bf76',orchard:'#b3d883',pond:'#98d6b1',flowers:'#bbd981',garden:'#b8d48c',hill:'#abcfa5',mushroom:'#b1ce84',path:"#d8ccab",brook:"#89c6b9",berries:"#8bbc6b",birch:"#abd9a0",sunflowers:"#c6d985",well:"#b3cca2",picnic:"#bedc8e",rocks:"#b6c8a6"};
-const LABEL={grass:'Grass',meadow:'Soft meadow',forest:'Pine forest',orchard:'Apple orchard',pond:'Little pond',flowers:'Flower field',garden:'Veggie garden',hill:'Rocky hill',mushroom:'Mushroom grove',path:"Cobblestone path",brook:"Babbling brook",berries:"Berry thicket",birch:"Birch grove",sunflowers:"Sunflower patch",well:"Old wishing well",picnic:"Picnic clearing",rocks:"Rocky meadow"};
-const EMOJI={grass:'🌾',meadow:'🌿',forest:'🌲',orchard:'🍎',pond:'💧',flowers:'🌸',garden:'🥕',hill:'⛰️',mushroom:'🍄',path:"🪨",brook:"🌊",berries:"🫐",birch:"🌳",sunflowers:"🌻",well:"🪣",picnic:"🧺",rocks:"🪨"};
-const TILESET=['grass','meadow','forest','orchard','pond','flowers','garden','hill','mushroom','brook','berries','birch','sunflowers','well','picnic','rocks'];
+const C={grass:'#acd987',meadow:'#a7d97b',forest:'#86bf76',orchard:'#b3d883',pond:'#98d6b1',flowers:'#bbd981',garden:'#b8d48c',hill:'#abcfa5',mushroom:'#b1ce84',path:"#d8ccab",brook:"#89c6b9",berries:"#8bbc6b",birch:"#abd9a0",sunflowers:"#c6d985",well:"#b3cca2",picnic:"#bedc8e",rocks:"#b6c8a6",stonecircle:'#aec8a0',ruins:'#a2bc9a',cave:'#9cae9b',shrine:'#a9bfaa'};
+const LABEL={grass:'Grass',meadow:'Soft meadow',forest:'Pine forest',orchard:'Apple orchard',pond:'Little pond',flowers:'Flower field',garden:'Veggie garden',hill:'Rocky hill',mushroom:'Mushroom grove',path:"Cobblestone path",brook:"Babbling brook",berries:"Berry thicket",birch:"Birch grove",sunflowers:"Sunflower patch",well:"Old wishing well",picnic:"Picnic clearing",rocks:"Rocky meadow",stonecircle:'Ancient stone circle',ruins:'Abandoned ruins',cave:'Hidden cave',shrine:'Mysterious monument'};
+const EMOJI={grass:'🌾',meadow:'🌿',forest:'🌲',orchard:'🍎',pond:'💧',flowers:'🌸',garden:'🥕',hill:'⛰️',mushroom:'🍄',path:"🪨",brook:"🌊",berries:"🫐",birch:"🌳",sunflowers:"🌻",well:"🪣",picnic:"🧺",rocks:"🪨",stonecircle:'🗿',ruins:'🏛️',cave:'🕳️',shrine:'✨'};
+const LANDMARKS={well:5,stonecircle:10,ruins:15,cave:25,shrine:40};
+const LANDMARK_IDS=Object.keys(LANDMARKS);
+const TILESET=['grass','meadow','forest','orchard','pond','flowers','hill','mushroom','brook','berries','birch','sunflowers','rocks',...LANDMARK_IDS];
+function worldProgress(){return 100*game.board.filter(Boolean).length/(N*N);}
+function landmark(type){return Object.prototype.hasOwnProperty.call(LANDMARKS,type);}
 const WUBBY_ACTIVITIES={"fish":{"tile":"pond","en":"Fishing","nl":"Vissen","say":"Maybe a fish will bite!","sayNl":"Misschien bijt er een visje!","diary":"I spent some time fishing at the pond.","diaryNl":"Ik heb een tijdje bij de vijver zitten vissen.","icon":"🎣","time":7.5},"water":{"tile":"pond","en":"Watching the water","nl":"Naar het water kijken","say":"Look at those ripples!","sayNl":"Kijk die kringetjes!","diary":"I sat by the pond and watched the ripples.","diaryNl":"Ik zat bij de vijver naar het water te kijken.","icon":"💧","time":5},"birds":{"tile":"forest","en":"Listening to birds","nl":"Naar vogels luisteren","say":"Such lovely birdsong!","sayNl":"Wat zingen die vogels mooi!","diary":"I listened to the birds singing among the pine trees.","diaryNl":"Ik luisterde naar de vogels tussen de dennenbomen.","icon":"🐦","time":6},"cones":{"tile":"forest","en":"Collecting pinecones","nl":"Dennenappels verzamelen","say":"This one's a keeper!","sayNl":"Deze neem ik mee!","diary":"I found a beautiful pinecone in the forest.","diaryNl":"Ik vond een prachtige dennenappel in het bos.","icon":"🌲","time":5},"apples":{"tile":"orchard","en":"Picking apples","nl":"Appels plukken","say":"A nice juicy apple!","sayNl":"Een heerlijke sappige appel!","diary":"I picked some apples from the orchard today.","diaryNl":"Vandaag heb ik appels uit de boomgaard geplukt.","icon":"🍎","time":5,"food":15},"rest":{"tile":"orchard","en":"Resting in the shade","nl":"Uitrusten in de schaduw","say":"This is a nice shady spot.","sayNl":"Wat een fijn schaduwplekje.","diary":"I took a little rest beneath the apple trees.","diaryNl":"Ik heb even onder de appelbomen uitgerust.","icon":"🌳","time":7,"energy":8},"flowers":{"tile":"flowers","en":"Smelling flowers","nl":"Aan bloemen ruiken","say":"That smells wonderful!","sayNl":"Wat ruikt dat heerlijk!","diary":"I stopped to smell the colorful flowers.","diaryNl":"Ik ben even gestopt om aan de bloemen te ruiken.","icon":"🌸","time":5},"butterfly":{"tile":"flowers","en":"Watching butterflies","nl":"Vlinders bekijken","say":"Hello little butterfly!","sayNl":"Hallo, kleine vlinder!","diary":"A butterfly danced above the flowers.","diaryNl":"Een vlinder danste boven de bloemen.","icon":"🦋","time":6},"watering":{"tile":"garden","en":"Watering the garden","nl":"De moestuin water geven","say":"Grow, little plants!","sayNl":"Groei maar, plantjes!","diary":"I watered the vegetables in the garden.","diaryNl":"Ik heb de groenten in de moestuin water gegeven.","icon":"💦","time":6},"harvest":{"tile":"garden","en":"Harvesting vegetables","nl":"Groenten oogsten","say":"Something tasty for later!","sayNl":"Iets lekkers voor straks!","diary":"I collected some vegetables from the garden.","diaryNl":"Ik heb groenten uit de moestuin gehaald.","icon":"🥕","time":5,"food":12},"clouds":{"tile":"meadow","en":"Watching clouds","nl":"Wolken kijken","say":"That cloud looks like a bun!","sayNl":"Die wolk lijkt op een broodje!","diary":"I lay in the meadow watching clouds drift by.","diaryNl":"Ik lag in de weide naar de wolken te kijken.","icon":"☁️","time":8,"energy":7},"picnic":{"tile":"meadow","en":"Having a picnic","nl":"Picknicken","say":"Everything tastes better outside!","sayNl":"Buiten smaakt alles lekkerder!","diary":"I had a lovely little picnic in the meadow.","diaryNl":"Ik heb heerlijk in de weide gepicknickt.","icon":"🧺","time":6,"food":8},"daydream":{"tile":"grass","en":"Daydreaming","nl":"Wegdromen","say":"I wonder what is out there...","sayNl":"Wat zou daar te ontdekken zijn...?","diary":"I sat in the grass and let my thoughts wander.","diaryNl":"Ik zat in het gras en liet mijn gedachten afdwalen.","icon":"🌿","time":6},"view":{"tile":"hill","en":"Admiring the view","nl":"Van het uitzicht genieten","say":"What a lovely view!","sayNl":"Wat een prachtig uitzicht!","diary":"I climbed a hill and looked across the land.","diaryNl":"Ik klom op een heuvel en keek uit over het land.","icon":"⛰️","time":6},"fungi":{"tile":"mushroom","en":"Looking at mushrooms","nl":"Paddenstoelen bekijken","say":"Funny little hats!","sayNl":"Wat een grappige hoedjes!","diary":"I discovered a curious patch of mushrooms.","diaryNl":"Ik ontdekte een bijzonder groepje paddenstoelen.","icon":"🍄","time":5}};
 for(const a of [{"id":"walk","tile":"path","en":"Following the path","nl":"Een wandeling maken","say":"Where does this path lead?","sayNl":"Waar zou dit pad naartoe gaan?","diary":"I wandered along the winding stone path.","diaryNl":"Ik heb heerlijk langs het slingerende klinkerpad gewandeld.","icon":"👣","time":6},{"id":"splash","tile":"brook","en":"Playing by the brook","nl":"Bij het beekje spelen","say":"Splash! That tickles!","sayNl":"Spetter! Dat kriebelt!","diary":"I played by the little brook and watched the water flow.","diaryNl":"Ik heb bij het beekje gespeeld en naar het stromende water gekeken.","icon":"💦","time":6},{"id":"berries","tile":"berries","en":"Picking berries","nl":"Bessen plukken","say":"Such sweet little berries!","sayNl":"Wat een lekkere besjes!","diary":"I picked some delicious berries from the bushes.","diaryNl":"Ik heb heerlijke besjes van de struiken geplukt.","icon":"🫐","time":5,"food":12},{"id":"birch","tile":"birch","en":"Listening to the leaves","nl":"Naar de bladeren luisteren","say":"The leaves are whispering.","sayNl":"De bladeren fluisteren!","diary":"I sat beneath the birch trees and listened to the rustling leaves.","diaryNl":"Ik zat onder de berken en luisterde naar de ritselende bladeren.","icon":"🌳","time":7,"energy":6},{"id":"seeds","tile":"sunflowers","en":"Watching sunflowers","nl":"Zonnebloemen bekijken","say":"They follow the sunshine!","sayNl":"Ze kijken naar de zon!","diary":"I watched the tall sunflowers sway in the breeze.","diaryNl":"Ik keek hoe de hoge zonnebloemen wiegden in de wind.","icon":"🌻","time":6},{"id":"wish","tile":"well","en":"Making a wish","nl":"Een wens doen","say":"I wish for more adventures!","sayNl":"Ik wens nog veel avonturen!","diary":"I whispered a little wish at the old well.","diaryNl":"Ik heb bij de oude wensput zachtjes een wens gefluisterd.","icon":"✨","time":7},{"id":"picnicspot","tile":"picnic","en":"Relaxing at the picnic spot","nl":"Uitbuiken op de picknickplek","say":"Such a cozy place!","sayNl":"Wat is het hier knus!","diary":"I sat at the picnic spot and enjoyed a quiet moment.","diaryNl":"Ik heb op de picknickplek heerlijk rustig gezeten.","icon":"🧺","time":7,"energy":7},{"id":"pebbles","tile":"rocks","en":"Collecting pebbles","nl":"Steentjes verzamelen","say":"This one is so smooth!","sayNl":"Wat een glad steentje!","diary":"I found beautiful little stones in the rocky meadow.","diaryNl":"Ik heb mooie kleine steentjes in de rotsweide gevonden.","icon":"🪨","time":5}]){WUBBY_ACTIVITIES[a.id]={tile:a.tile,en:a.en,nl:a.nl,say:a.say,sayNl:a.sayNl,diary:a.diary,diaryNl:a.diaryNl,icon:a.icon,time:a.time,food:a.food||0,energy:a.energy||0};}
 const ACTIVITIES_BY_TILE={};
@@ -218,6 +225,7 @@ function tr(value){
  return original;
 }
 function trTileName(name){return NL_TEXT[name]||Object.entries(NL_TEXT).find(([k])=>k.toLowerCase()===name.toLowerCase())?.[1]?.toLowerCase()||name;}
+Object.assign(NL_TEXT,{"Ancient stone circle":"Oude steencirkel","Abandoned ruins":"Verlaten ruïne","Hidden cave":"Verborgen grot","Mysterious monument":"Mysterieus monument","Old wishing well":"Verlaten put","New landmark unlocked!":"Nieuwe bijzondere plek vrijgespeeld!"});
 const ORIGINAL_UI_TEXT=[];
 const walker=document.createTreeWalker(document.querySelector('.app'),NodeFilter.SHOW_TEXT);
 for(let node;node=walker.nextNode();){let value=node.nodeValue,trim=value.trim();if(trim&&Object.prototype.hasOwnProperty.call(NL_TEXT,trim))ORIGINAL_UI_TEXT.push([node,value]);}
@@ -370,9 +378,9 @@ function renderDiary(){$('diary').innerHTML=game.journal.slice(0,14).map(e=>`<di
 function escapeHTML(s){return String(s).replace(/[&<>\"]/g,t=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[t]));}
 
 // ROAD SYSTEM: pieces keep their own fixed shape. N,E,S,W indices 0..3.
-const ROAD_BASE={straight:[0,2],left:[0,1],right:[0,3],tee:[0,1,3],cross:[0,1,2,3],bridge:[0,2]};
-const ROAD_NAME={straight:['Recht','Straight'],left:['Bocht links','Left bend'],right:['Bocht rechts','Right bend'],tee:['T-splitsing','T-junction'],cross:['Kruising','Crossroads'],bridge:['Bruggetje','Little bridge']};
-const ROAD_WEIGHTS={straight:32,left:32,right:32,tee:5,cross:1.5,bridge:2};
+const ROAD_BASE={straight:[0,2],bend:[0,1],tee:[0,1,3],cross:[0,1,2,3],bridge:[0,2]};
+const ROAD_NAME={straight:['Recht','Straight'],bend:['Bocht','Bend'],tee:['T-splitsing','T-junction'],cross:['Kruising','Crossroads'],bridge:['Bruggetje','Little bridge']};
+const ROAD_WEIGHTS={straight:42,bend:42,tee:6,cross:1.3,bridge:2};
 function availableRoads(){return game.board.filter(t=>t==='pond'||t==='brook').length+Object.keys(game.bridgeUnderlay||{}).length>=2?Object.keys(ROAD_BASE):Object.keys(ROAD_BASE).filter(t=>t!=='bridge');}
 function pickRoad(excluded=[]){
  let options=availableRoads().filter(t=>!excluded.includes(t));
@@ -381,8 +389,15 @@ function pickRoad(excluded=[]){
  for(const t of options){roll-=ROAD_WEIGHTS[t];if(roll<=0)return t;}
  return options[options.length-1];
 }
+function normalizedRoad(spec){
+ const kind=spec?.kind,rot=Number(spec?.rot)||0;
+ if(kind==='right')return {kind:'bend',rot:((rot+3)%4+4)%4};
+ if(kind==='left')return {kind:'bend',rot:((rot%4)+4)%4};
+ return {kind:ROAD_BASE[kind]?kind:'straight',rot:((rot%4)+4)%4};
+}
 function rotatedArms(spec){
- return (ROAD_BASE[spec?.kind]||ROAD_BASE.straight).map(v=>(v+(spec?.rot||0)+4)%4);
+ const road=normalizedRoad(spec);
+ return ROAD_BASE[road.kind].map(v=>(v+road.rot)%4);
 }
 function getRoad(k){return game.roads[k]||{kind:'straight',rot:0};}
 function roadLinked(a,b){
@@ -394,7 +409,8 @@ function roadLinked(a,b){
 function allowsMove(a,b){return game.board[a]!=='path'||game.board[b]!=='path'||roadLinked(a,b);}
 function initRoads(){
  game.roads=game.roads||{};game.bridgeUnderlay=game.bridgeUnderlay||{};
- game.bank=(game.bank||[]).filter(t=>t!=='path');
+ for(const [k,v] of Object.entries(game.roads))game.roads[k]=normalizedRoad(v);
+ game.bank=(game.bank||[]).filter(t=>t!=='path'&&t!=='garden'&&t!=='picnic'&&unlockedTiles().includes(t)&&(!landmark(t)||remainingCapacity(t)>0));
  while(game.bank.length<3)game.bank.push(pickTile(game.bank));
  game.bank=game.bank.slice(0,3);
  // Imported roads are classified once. New neighboring pieces never reshape them.
@@ -403,12 +419,12 @@ function initRoads(){
   const {r,c}=pos(i);
   const sides=[[r-1,c],[r,c+1],[r+1,c],[r,c-1]];
   const dirs=sides.map(([rr,cc],d)=>rr>=0&&rr<N&&cc>=0&&cc<N&&['path','home'].includes(game.board[key(rr,cc)])?d:-1).filter(d=>d>=0);
-  let kind=dirs.length===4?'cross':dirs.length===3?'tee':dirs.length===2&&((dirs[0]+2)%4!==dirs[1])?'left':'straight';
+  let kind=dirs.length===4?'cross':dirs.length===3?'tee':dirs.length===2&&((dirs[0]+2)%4!==dirs[1])?'bend':'straight';
   let rot=0;
   for(let j=0;j<4;j++){const arms=rotatedArms({kind,rot:j});if(dirs.every(d=>arms.includes(d))){rot=j;break;}}
   game.roads[i]={kind,rot};
  }
- game.roadBank=Array.isArray(game.roadBank)?game.roadBank.filter(k=>availableRoads().includes(k)):[];
+ game.roadBank=Array.isArray(game.roadBank)?game.roadBank.map(k=>k==='left'||k==='right'?'bend':k).filter(k=>availableRoads().includes(k)):[];
  while(game.roadBank.length<3)game.roadBank.push(pickRoad(game.roadBank));
  game.roadBank=game.roadBank.slice(0,3);
  game.roadSelected=Math.max(0,Math.min(2,game.roadSelected||0));
@@ -468,11 +484,11 @@ function available(r,c){const v=game.board[key(r,c)];if(v)return true;return nei
 function canBuild(r,c){if(r<0||c<0||r>=N||c>=N)return false;const k=key(r,c);if(k===home)return false;if(Math.round(game.wubby.x)===c&&Math.round(game.wubby.y)===r)return false;return available(r,c);}
 // Grass and paths are the foundation of a cozy village; special features are less frequent.
 const TILE_WEIGHTS={
- grass:36,meadow:12,forest:7,flowers:6,pond:5,garden:5,
+ grass:36,meadow:12,forest:7,flowers:6,pond:5,
  birch:5,brook:4,berries:4,sunflowers:4,rocks:4,hill:3,mushroom:3,
- orchard:4,picnic:2,well:1
+ orchard:4,well:2,stonecircle:1.8,ruins:1.6,cave:1.3,shrine:1
 };
-const TILE_LIMITS={well:1,picnic:2};
+const TILE_LIMITS={well:1,stonecircle:1,ruins:1,cave:1,shrine:1};
 // Existing worlds remain intact. Replace only excess special tiles in the selection bank.
 {
  const offers=[];
@@ -485,9 +501,10 @@ const TILE_LIMITS={well:1,picnic:2};
 
 function unlockedTiles(){
  const count=game.placed;
- if(count<4)return ['grass','meadow','flowers','orchard','forest','pond','garden'];
- if(count<11)return ['grass','meadow','flowers','orchard','forest','pond','garden','berries','birch','picnic','hill'];
- return TILESET;
+ const base=count<4?['grass','meadow','flowers','orchard','forest','pond']:
+   count<11?['grass','meadow','flowers','orchard','forest','pond','berries','birch','hill']:
+   TILESET.filter(t=>!landmark(t));
+ return [...base,...LANDMARK_IDS.filter(t=>worldProgress()>=LANDMARKS[t])];
 }
 function remainingCapacity(type,otherOffers=[]){
  const limit=TILE_LIMITS[type];if(!limit)return Infinity;
@@ -504,11 +521,20 @@ function pickTile(avoid=[]){
  for(const t of eligible){roll-=(TILE_WEIGHTS[t]||1);if(roll<0)return t;}
  return eligible[eligible.length-1];
 }
+function nextLandmark(){
+ return LANDMARK_IDS.filter(k=>worldProgress()<LANDMARKS[k]).sort((a,b)=>LANDMARKS[a]-LANDMARKS[b])[0]||null;
+}
 function renderCatalog(){
  const allowed=new Set(unlockedTiles());
  const ordered=TILESET;
  $('tileCatalog').innerHTML=ordered.map(t=>'<span class="catalog-chip '+(allowed.has(t)?'':'locked')+'" title="'+escapeHTML(tr(LABEL[t]))+'">'+(allowed.has(t)?EMOJI[t]:'🔒')+' '+escapeHTML(tr(LABEL[t]))+'</span>').join('');
  $('tileUnlockLabel').textContent=language==='nl'?('Tegelsoorten: '+allowed.size+' van '+TILESET.length+' beschikbaar'):('Tile types: '+allowed.size+' of '+TILESET.length+' available');
+ const next=nextLandmark();
+ $('milestoneInfo').textContent=next?
+ (language==='nl'?('Volgende bijzondere plek bij '+LANDMARKS[next]+'%: '+tr(LABEL[next])+'. Wubby maakt zelf moestuinen en picknickplekken.'):
+ ('Next landmark at '+LANDMARKS[next]+'%: '+LABEL[next]+'. Wubby creates gardens and picnic spots himself.')):
+ (language==='nl'?'Alle bijzondere plekken zijn vrijgespeeld. Wubby maakt zelf moestuinen en picknickplekken.':
+ 'All landmarks unlocked. Wubby builds his own gardens and picnic spots.');
 }
 
 function placement(r,c){if(!canBuild(r,c)){toast(game.board[key(r,c)]==='home'?"Wubby's home stays right here.":'Place beside the existing world.');return;}let k=key(r,c),old=game.board[k],tile=buildMode==='road'?'path':game.bank[game.selected],roadPiece=buildMode==='road'?currentRoad():null;
@@ -771,7 +797,7 @@ function diamondLux(x,y,s,fill,highlight=false){
 // Prototype ground: one exact diamond for every type. No image contains a second soil platform.
 function unifiedGround(r,c,type,highlight=false){
  const {x,y}=view(r,c),w=TILE_W*zoom*.5,h=TILE_H*zoom*.5,depth=9*zoom;
- const terrainTone={grass:'#a6cc89',meadow:'#b2d38b',forest:'#9ec48a',birch:'#a4c991',
+ const terrainTone={stonecircle:'#aec8a0',ruins:'#a2bc9a',cave:'#9cae9b',shrine:'#a9bfaa',grass:'#a6cc89',meadow:'#b2d38b',forest:'#9ec48a',birch:'#a4c991',
     flowers:'#aacb87',orchard:'#a8ce86',garden:'#afcd86',berries:'#a6c587',
     mushroom:'#a5c487',sunflowers:'#b6cf84',well:'#b1cb92',picnic:'#acd28d',
     pond:'#a0c991',brook:'#9fca93',path:'#b7ca91',hill:'#acc799',rocks:'#acc598'};
@@ -821,8 +847,7 @@ function drawConnectedPath(r,c,spec){
   }
  }
  storyEllipse(x,y,(bridge?9:10.5)*zoom,(bridge?4.8:5.5)*zoom,bridge?'#dfbd90':'#d8c6a7');
- if(spec.kind==='left')storyEllipse(x-3*zoom,y+1*zoom,2.5*zoom,1.2*zoom,'#f1dfbd');
- if(spec.kind==='right')storyEllipse(x+3*zoom,y-1*zoom,2.5*zoom,1.2*zoom,'#f1dfbd');
+ if(spec.kind==='bend')storyEllipse(x-3*zoom,y+1*zoom,2.5*zoom,1.2*zoom,'#f1dfbd');
  ctx.restore();
 }
 function drawTileLux(r,c,type,highlight,time){
