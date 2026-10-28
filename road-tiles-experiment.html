@@ -331,6 +331,9 @@ game.wubby.facing=Number.isFinite(game.wubby.facing)?game.wubby.facing:7;
 game.wubby.lookFacing=null;game.wubby.lookTime=0;game.wubby.blinkTime=0;game.wubby.activity=null;
 game.activityCounts=game.activityCounts||{};
 game.activityMoments=Array.isArray(game.activityMoments)?game.activityMoments:[];
+game.lastWubbyBuildDay=Number.isFinite(game.lastWubbyBuildDay)?game.lastWubbyBuildDay:-5;
+game.lastRoadComplaintDay=Number.isFinite(game.lastRoadComplaintDay)?game.lastRoadComplaintDay:-5;
+game.wubbyBuilds=Number.isFinite(game.wubbyBuilds)?game.wubbyBuilds:0;
 let zoom=1.08,panX=0,panY=35;
 let unifiedMode=true, buildMode='terrain';
 function save(){try{localStorage.setItem(STORE,JSON.stringify(game));}catch(e){}}
@@ -424,6 +427,7 @@ function initRoads(){
   for(let j=0;j<4;j++){const arms=rotatedArms({kind,rot:j});if(dirs.every(d=>arms.includes(d))){rot=j;break;}}
   game.roads[i]={kind,rot};
  }
+ if(game.roadBank?.[game.roadSelected]==='right')game.roadRotation=((game.roadRotation||0)+3)%4;
  game.roadBank=Array.isArray(game.roadBank)?game.roadBank.map(k=>k==='left'||k==='right'?'bend':k).filter(k=>availableRoads().includes(k)):[];
  while(game.roadBank.length<3)game.roadBank.push(pickRoad(game.roadBank));
  game.roadBank=game.roadBank.slice(0,3);
@@ -537,7 +541,53 @@ function renderCatalog(){
  'All landmarks unlocked. Wubby builds his own gardens and picnic spots.');
 }
 
+function roadDensity(){
+ const filled=game.board.filter(Boolean).length;
+ return filled?game.board.filter(t=>t==='path').length/filled:0;
+}
+function maybeRoadComplaint(){
+ const filled=game.board.filter(Boolean).length,ratio=roadDensity();
+ if(filled<16||ratio<.33||game.lastRoadComplaintDay===game.day)return;
+ if(Math.random()>.72)return;
+ const severe=ratio>=.54;
+ game.lastRoadComplaintDay=game.day;
+ game.happiness=clamp(game.happiness-(severe?3:1),15,100);
+ speak(language==='nl'?
+ (severe?'Zoveel stenen... waar moeten de bloemen nog groeien?':'De paadjes zijn fijn, maar ik mis het wilde gras.'):
+ (severe?'So many stones... where will the flowers grow?':'The paths are lovely, but I miss the wild grass.'),5);
+ log(language==='nl'?'Wubby vindt dat er wel erg veel paden zijn.':'Wubby thinks there are rather a lot of paths.');
+}
+function notifyWubby(message){
+ const node=$('wubbyBuildNotice');if(!node)return;
+ node.textContent=message;node.classList.add('show');
+ clearTimeout(notifyWubby.timer);notifyWubby.timer=setTimeout(()=>node.classList.remove('show'),6200);
+}
+function maybeWubbyBuild(tile,p){
+ if(!['grass','meadow','flowers'].includes(tile)||game.day<2||game.lastWubbyBuildDay===game.day)return false;
+ const visits=game.visited[p]||0;if(visits<2)return false;
+ const {r,c}=pos(p),distance=Math.abs(r-HOME)+Math.abs(c-HOME);
+ const gardens=game.board.filter(t=>t==='garden').length,picnics=game.board.filter(t=>t==='picnic').length;
+ const garden=distance<=4&&tile!=='flowers'&&gardens<2&&Math.random()<.32;
+ const picnic=!garden&&visits>=3&&picnics<3&&Math.random()<.26;
+ if(!garden&&!picnic)return false;
+ const type=garden?'garden':'picnic';
+ game.board[p]=type;game.lastWubbyBuildDay=game.day;game.wubbyBuilds++;
+ // Wubby develops an occupied square, never increasing world percentage.
+ rest('building',garden?8:5.5);
+ speak(language==='nl'?(garden?'Mijn eigen moestuintje!':'Wat een heerlijke picknickplek!'):
+ (garden?'My own little vegetable garden!':'What a lovely picnic spot!'),4.5);
+ notifyWubby(language==='nl'?(garden?'🌱 Wubby heeft een moestuintje aangelegd!':'🧺 Wubby heeft een picknickplek ingericht!'):
+ (garden?'🌱 Wubby built a vegetable garden!':'🧺 Wubby set up a picnic spot!'));
+ log(language==='nl'?(garden?'Ik heb een moestuintje dicht bij huis aangelegd.':'Ik heb een fijn plekje gevonden voor mijn picknickspullen.'):
+ (garden?'I made a vegetable garden near home.':'I found a lovely spot for my picnic things.'));
+ renderBank();ui();save();return true;
+}
 function placement(r,c){if(!canBuild(r,c)){toast(game.board[key(r,c)]==='home'?"Wubby's home stays right here.":'Place beside the existing world.');return;}let k=key(r,c),old=game.board[k],tile=buildMode==='road'?'path':game.bank[game.selected],roadPiece=buildMode==='road'?currentRoad():null;
+ if(landmark(old)){toast(language==='nl'?'Bijzondere plekken blijven behouden.':'Landmarks cannot be overwritten.');return;}
+ if(landmark(tile)&&(old||worldProgress()<LANDMARKS[tile])){
+  toast(language==='nl'?'Een bijzondere plek kan alleen op een lege tegel, na de juiste mijlpaal.':'Landmarks need an empty tile and the required world milestone.');return;
+ }
+ const earlierProgress=worldProgress();
  if(roadPiece?.kind==='bridge'&&!['pond','brook'].includes(old)){toast(language==='nl'?'Een bruggetje moet over een vijver of beek.':'A bridge must cross water.');return;}
  if(roadPiece&&roadPiece.kind!=='bridge'&&['pond','brook'].includes(old)){toast(language==='nl'?'Voor water heb je een bruggetje nodig.':'You need a bridge over water.');return;}
  if(old===tile){toast(language==='nl'?'Hier ligt al zo’n tegel.':'This tile is already here.');return;}
@@ -549,6 +599,11 @@ function placement(r,c){if(!canBuild(r,c)){toast(game.board[key(r,c)]==='home'?"
  if(buildMode==='road'){game.roadBank[game.roadSelected]=pickRoad(game.roadBank.filter((_,i)=>i!==game.roadSelected));game.roadRotation=0;}
  else game.bank[game.selected]=pickTile(game.bank.filter((_,i)=>i!==game.selected));
  if(game.placed===1){toast('The world grows! Wubby may discover it soon.');}else toast(old?'A little corner of this world has changed.':'A new part of Wubby’s world appeared!');
+ if(worldProgress()>earlierProgress){
+  const unlocked=LANDMARK_IDS.find(t=>earlierProgress<LANDMARKS[t]&&worldProgress()>=LANDMARKS[t]);
+  if(unlocked)toast(language==='nl'?'Nieuwe bijzondere plek vrijgespeeld: '+tr(LABEL[unlocked])+'!':'New landmark unlocked: '+LABEL[unlocked]+'!');
+ }
+ if(buildMode==='road')maybeRoadComplaint();
  if(game.placed===3)log('There seems to be more to explore every day. How exciting!');
  if(game.placed===10)log('This place keeps surprising me. I wonder how far it goes.');
  if(game.wubby.state==='walking'&&!game.board[game.wubby.to]){game.wubby.to=home;game.wubby.route=[];}
@@ -1418,7 +1473,7 @@ function decide(){
   const homeDist=Math.abs(p.r-HOME)+Math.abs(p.c-HOME);
   let weight=1.3/(1+cost*.20);
   if(!visits)weight*=2.5;
-  if(tile==='path')weight*=5*(1+Math.min(1.6,homeDist/9));
+  if(tile==='path')weight*=(roadDensity()>.48?2.2:5)*(1+Math.min(1.6,homeDist/9));
   else if((ACTIVITIES_BY_TILE[tile]||[]).some(id=>!game.activityCounts[id]))weight*=1.9;
   if(tile===game.favorite)weight*=1.4;
   if(homeDist>12&&game.energy<62)weight*=.12;
@@ -1448,19 +1503,25 @@ function arrive(){let k=game.wubby,tile=game.board[k.goal],p=k.goal;
  }if(k.intent==='shelter'){rest('shelter',4);speak('Nice and dry.',3);return;}
  rest('enjoy',rand(1.7,4.1));let visits=game.visited[p]||0;game.visited[p]=visits+1;
  if(!visits){
+  if(landmark(tile)){
+   game.happiness=clamp(game.happiness+16,0,100);
+   rest('enjoy',7.5);
+   notifyWubby(language==='nl'?'✨ Wubby heeft iets bijzonders ontdekt: '+tr(LABEL[tile])+'!':
+    '✨ Wubby discovered something remarkable: '+LABEL[tile]+'!');
+  }
   const pHome=pos(p),distanceHome=Math.abs(pHome.r-HOME)+Math.abs(pHome.c-HOME);
   if(distanceHome>(game.farthest||0)){
    game.farthest=distanceHome;
    if(distanceHome>=8&&distanceHome%4===0)log('I wandered farther than ever before. What a big world!');
   }
-  game.discoveries++;let intros={home:'Home, sweet home.',grass:'Some soft grass to sit on.',meadow:'What a peaceful little meadow!',forest:'A shady grove of pine trees. How lovely!',orchard:'Apples! I wonder if they taste good.',pond:'A little pond. The water sparkles.',flowers:'Look at all these beautiful flowers!',garden:'A garden full of tasty things!',hill:'From up here, everything looks so small.',mushroom:'Mushrooms! I should remember this place.',path:'A winding path! Where does it go?',brook:'A little brook, flowing so gently.',berries:'What lovely berries!',birch:'These trees are so peaceful.',sunflowers:'They are as bright as the sunshine!',well:'An old well! I wonder who built it.',picnic:'A perfect place for a picnic!',rocks:'So many interesting stones!'};speak(intros[tile]||'What a discovery!',3);log(intros[tile]||'I found a new place!');game.happiness=clamp(game.happiness+1.7,10,100);}
+  game.discoveries++;let intros={home:'Home, sweet home.',grass:'Some soft grass to sit on.',meadow:'What a peaceful little meadow!',forest:'A shady grove of pine trees. How lovely!',orchard:'Apples! I wonder if they taste good.',pond:'A little pond. The water sparkles.',flowers:'Look at all these beautiful flowers!',garden:'A garden full of tasty things!',hill:'From up here, everything looks so small.',mushroom:'Mushrooms! I should remember this place.',path:'A winding path! Where does it go?',brook:'A little brook, flowing so gently.',berries:'What lovely berries!',birch:'These trees are so peaceful.',sunflowers:'They are as bright as the sunshine!',well:'An old well! I wonder who built it.',picnic:'A perfect place for a picnic!',rocks:'So many interesting stones!',stonecircle:'An ancient circle of stones! Who left it here?',ruins:'These old ruins must have a story.',cave:'A hidden cave! I wonder what is inside.',shrine:'What a mysterious monument!'};speak(intros[tile]||'What a discovery!',3);log(intros[tile]||'I found a new place!');game.happiness=clamp(game.happiness+1.7,10,100);}
  else if(visits>=3&&tile!=='home'){
   game.affinity[tile]=(game.affinity[tile]||0)+1;
   if(!game.favorite||game.affinity[tile]>game.affinity[game.favorite]+2){game.favorite=tile;log(`I think ${LABEL[tile].toLowerCase()} might be my favorite place of all.`);speak('I love it here!',3);game.happiness=clamp(game.happiness+4,0,100);}
  }
  if(tile==='pond'){speak('So peaceful...',2.3);game.happiness=clamp(game.happiness+1,0,100);}
  if(tile==='flowers'){game.happiness=clamp(game.happiness+1,0,100)}
- if(k.intent==='enjoy')performActivity(tile,p);
+ if(k.intent==='enjoy'&&!maybeWubbyBuild(tile,p))performActivity(tile,p);
 }
 function update(dt){let k=game.wubby;game.daySeconds+=dt; if(game.daySeconds>=120){game.daySeconds-=120;game.day++;if(game.day%3===0)log('Another day in this curious little world. I wonder what I might find next.');save();}
  if(game.sky==='rain'){game.weatherTimer-=dt;if(game.weatherTimer<=0){game.sky='sun';toast('The clouds drifted away.');}}
