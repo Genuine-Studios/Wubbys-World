@@ -4,11 +4,11 @@
 </style></head><body><header><h1>Wubby's World · Modulaire bosproef</h1><p>Een eerste bos met de goedgekeurde gras- en bosgrond, bestaande vijvers en aanpasbare boomgroepen. Alle onderdelen blijven op hetzelfde isometrische raster.</p></header>
 <main><div class="tools" id="presets">
 <button data-preset="clearing" class="on">🌲 Bos met open plek</button><button data-preset="grove">🌳 Bosrand</button><button data-preset="dense">🌲 Dicht bos</button></div>
-<div class="tools"><button data-brush="forest" class="on">🌲 Bosgrond</button><button data-brush="grass">🌱 Gras</button><button data-brush="water">💧 Water</button><button id="grid">Raster tonen</button><button id="minus">−</button><button id="plus">+</button><button id="reset">Herstel</button></div>
-<div class="tools"><span style="align-self:center;color:#cadfc8;font-size:12px;margin-right:5px">Bomen:</span><button data-density="low">Weinig</button><button data-density="medium" class="on">Gemiddeld</button><button data-density="high">Veel</button></div>
-<div class="sub">Tik op de kaart om terrein te veranderen, versleep om rond te kijken. De bomen zijn tijdelijke vormstudies, nog geen definitieve geïllustreerde assets.</div>
+<div class="tools"><button data-brush="pine" class="on">🌲 Dennenbos</button><button data-brush="birch">🌳 Berkenbos</button><button data-brush="grass">🌱 Gras</button><button data-brush="water">💧 Water</button><button id="grid">Raster tonen</button><button id="minus">−</button><button id="plus">+</button><button id="reset">Herstel</button></div>
+<div class="tools"><span style="align-self:center;color:#cadfc8;font-size:12px;margin-right:5px">Bomen per bostegel:</span><button data-density="low">2–3</button><button data-density="medium" class="on">3–5</button><button data-density="high">5–7</button></div>
+<div class="sub">Tik op de kaart om terrein te veranderen, versleep om rond te kijken. Dennen en berken staan op afzonderlijke bostegels. Elke bostegel bevat meerdere bomen; de individuele boomillustraties zijn nog vormstudies.</div>
 <div id="viewport"><canvas id="stage" aria-label="Interactieve modulaire bos- en vijverproef"></canvas></div><div class="meta"><span id="status">Bosgrond · gras · vijvers</span><span id="zoom">100%</span></div></main>
-<footer><strong>Losse, niet-opgeslagen bosproef; het bestaande spel blijft intact.</strong> Gras en bosgrond gebruiken de vastgelegde individuele 112 × 57-ruitmethode. Water en oevers blijven van de goedgekeurde vijverstudie. De bomen zijn uitsluitend voorlopige silhouetten voor compositie, schaal en dichtheid.</footer>
+<footer><strong>Losse, niet-opgeslagen bosproef; het bestaande spel blijft intact.</strong> Gras en bosgrond gebruiken de vastgelegde individuele 112 × 57-ruitmethode. Water en oevers blijven van de goedgekeurde vijverstudie. Dennen- en berkenbostegels zijn afzonderlijke soorten met ieder 2–7 bomen. De bestaande bosgrondillustratie wordt voorlopig voor beide gebruikt; de boomillustraties zijn vervangbare studies.</footer>
 <script src="wubby-graphics-lab.js?v=1"></script>
 <script src="wubby-forest-study-v2.js?v=1"></script>
 <script>
@@ -18,7 +18,7 @@ const ART={'forest':"data:image/webp;base64,UklGRiIkBQBXRUJQVlA4IBYkBQCwWxOdASoA
 let pondLayer=null;
 const images={};for(const [name,uri] of Object.entries(ART)){const img=new Image();img.src=uri;img.onload=()=>{patterns[name]=null;pondLayer=null;render()};images[name]=img;}
 const patterns={grass:null,water:null,bank:null};
-let board=Array(N*N).fill('grass'),preset='clearing',brush='forest',density='medium',grid=false,zoom=innerWidth<600?.88:1.64,panX=0,panY=0,cw=450,ch=480,dpr=1;
+let board=Array(N*N).fill('grass'),preset='clearing',brush='pine',density='medium',grid=false,zoom=innerWidth<600?.88:1.64,panX=0,panY=0,cw=450,ch=480,dpr=1;
 const $=id=>document.getElementById(id),hash=t=>{let z=Math.sin(t*127.125+13.61)*43758.5453;return z-Math.floor(z)};
 const presets={clearing:[[4,4],[4,5],[5,4],[5,5]],grove:[[5,4],[5,5]],dense:[[4,4],[4,5],[5,4],[5,5]]};
 const sides=[[[0,-H/2],[W/2,0]],[[W/2,0],[0,H/2]],[[0,H/2],[-W/2,0]],[[-W/2,0],[0,-H/2]]];
@@ -31,7 +31,11 @@ function setPreset(name){
   const f=name==='grove'?(c<=3+(h>.63?1:0)&&r>=1&&r<=7)
    :name==='dense'?(d<5.3&&h>.10)
    :(d>2.12&&d<5.6&&h>.14);
-  if(f)board[r*N+c]='forest';
+  if(f){
+   // Stable grove-sized patches rather than randomly mixed tree species.
+   const birchPatch=(r>=4&&c>=5)||(r<=3&&c<=2&&name!=='dense');
+   board[r*N+c]=birchPatch?'birch':'pine';
+  }
  }
  for(const [r,c] of presets[name])board[r*N+c]='water';
  document.querySelectorAll('[data-preset]').forEach(b=>b.classList.toggle('on',b.dataset.preset===name));
@@ -42,7 +46,7 @@ function diamond(x,y){ctx.moveTo(x,y-H/2);ctx.lineTo(x+W/2,y);ctx.lineTo(x,y+H/2
 function isWater(r,c){return r>=0&&r<N&&c>=0&&c<N&&board[r*N+c]==='water'}
 function ready(n){const i=images[n];return i&&i.complete&&i.naturalWidth>0}
 function grassTile(r,c){const {x,y}=center(r,c);ctx.save();ctx.beginPath();diamond(x,y);ctx.clip();
- const material=board[r*N+c]==='forest'?'forest':'grass';
+ const material=['pine','birch'].includes(board[r*N+c])?'forest':'grass';
  if(ready(material)){const im=images[material],iw=im.naturalWidth,ih=im.naturalHeight,sw=Math.min(iw,620),sh=sw*H/W;
  const sx=hash((r+13)*31+c*7)*Math.max(0,iw-sw),sy=hash((c+11)*53+r*19)*Math.max(0,ih-sh);
  ctx.drawImage(im,sx,sy,sw,sh,x-W/2,y-H/2,W,H)}else{ctx.fillStyle=material==='forest'?'#737e59':'#a0bf83';ctx.fillRect(x-W/2,y-H/2,W,H)}ctx.restore()}
@@ -107,29 +111,85 @@ function buildPondLayer(){
  return {canvas:target,x:-ox,y:-oy};
 }
 function isolated(r,c){return !neighbor.some(([dr,dc])=>isWater(r+dr,c+dc))}
-function forestObjects(){
- const lab=window.WUBBY_GRAPHICS_LAB,cap=density==='low'?.23:density==='high'?.83:.51;
- let count=0;
- if(!lab)return count;
- // Each tree is anchored to its game-owned tile, sorted from back to front.
- const tiles=[];
- for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(board[r*N+c]==='forest')tiles.push([r,c]);
- tiles.sort((a,b)=>a[0]+a[1]-b[0]-b[1]||a[0]-b[0]);
- for(const [r,c] of tiles){
-  const seed=(r+13)*93+c*61;
-  const h=hash(seed);
-  if(h>cap)continue;
-  const p=center(r,c);count++;
-  ctx.save();ctx.translate(p.x,p.y+7);
-  // These cached tree studies are replaceable objects, not part of the terrain image.
-  if(lab.forestV2&&hash(seed+13)>.37){ctx.scale(.68,.68);lab.forestV2(ctx,seed,0);}
-  else if(lab.object){
-   lab.object(ctx,'pine',0,0,.77+hash(seed+3)*.22,seed);
-   if(hash(seed+2)>.5)lab.object(ctx,'bush',-21,7,.25,seed+8);
-  }
-  ctx.restore();
+// Isolated tree objects sit above the approved terrain; they are not ground textures.
+// Until final painted sprites are supplied, cache a small transparent birch study.
+const birchSprites=new Map();
+function birchSprite(variant){
+ const v=variant%6;if(birchSprites.has(v))return birchSprites.get(v);
+ const c=document.createElement('canvas');c.width=240;c.height=324;
+ const g=c.getContext('2d');g.scale(3,3);
+ const tip=16+(v%3)*3,base=103,cx=40+(v%2)*3;
+ g.fillStyle='rgba(32,61,45,.14)';g.beginPath();g.ellipse(cx,base+2,24,5,0,0,Math.PI*2);g.fill();
+ // Slender white birch trunk and dark, uneven bark markings.
+ g.beginPath();g.moveTo(cx-4,base);g.bezierCurveTo(cx-4,77,cx-9,44,cx-2,tip+19);
+ g.lineTo(cx+3,tip+19);g.bezierCurveTo(cx+1,50,cx+4,74,cx+4,base);g.closePath();
+ g.fillStyle='#e9e9d7';g.fill();g.strokeStyle='#6e7564';g.lineWidth=1.1;g.stroke();
+ g.strokeStyle='#3d5448';g.lineWidth=1.6;
+ for(let i=0;i<9;i++){const y=45+i*6+((v+i)%3);const x=cx-5+(i%2);g.beginPath();g.moveTo(x,y);g.lineTo(x+4+i%3,y+1);g.stroke();}
+ for(const [dx,dy] of [[-26,-26],[21,-38],[-16,-52],[13,-65]]){
+  g.strokeStyle='#766957';g.lineWidth=2.0;
+  g.beginPath();g.moveTo(cx,base-29);g.quadraticCurveTo(cx+dx*.5,base-48,cx+dx,base+dy-37);g.stroke();
  }
- return count;
+ const clusters=[[-24,34,18,14],[-7,23,20,15],[18,31,21,15],[29,48,16,12],[-28,52,16,12],[4,49,25,17],[1,13,14,13]];
+ const p=['#739e65','#a4c77b','#608e5d','#c0cd84','#83ad6d','#c1d89a'];
+ for(let k=0;k<clusters.length;k++){
+  const [dx,yy,rx,ry]=clusters[k],x=cx+dx+(v%3-1)*2,y=yy+(v%2)*2;
+  g.fillStyle=p[(k+v)%p.length];g.beginPath();g.ellipse(x,y,rx,ry,-.12,0,Math.PI*2);g.fill();
+  g.fillStyle='rgba(214,235,172,.35)';g.beginPath();g.ellipse(x-4,y-5,rx*.56,ry*.38,-.12,0,Math.PI*2);g.fill();
+  for(let j=0;j<8;j++){
+   const xj=x+(hash((v+1)*57+k*16+j*3)-.5)*rx*1.55;
+   const yj=y+(hash((v+1)*93+k*7+j*5)-.5)*ry*1.35;
+   g.fillStyle=(j%3===0?'#d8dea2':'#a0c27b');g.beginPath();g.ellipse(xj,yj,2.5,1.4,.3,0,Math.PI*2);g.fill();
+  }
+ }
+ birchSprites.set(v,c);return c;
+}
+const treePositions=[
+ [-25,-5],[23,-9],[-3,8],[-34,5],[34,9],[-12,-13],[13,13]
+];
+// Stable per-tile count: no forest tile is randomly empty or limited to one tree.
+function treesOnTile(r,c){
+ const seed=(r+13)*93+c*61;
+ const ranges={low:[2,3],medium:[3,5],high:[5,7]};
+ const [min,max]=ranges[density];
+ return min+Math.floor(hash(seed+79)*(max-min+1));
+}
+function drawForestTree(kind,variant,x,y,scale,lab){
+ ctx.save();ctx.translate(x,y);
+ if(kind==='birch'){
+  const asset=birchSprite(variant),w=80*scale,h=108*scale;
+  ctx.drawImage(asset,-w/2,-h,w,h);
+ }else if(lab?.object){
+  lab.object(ctx,'pine',0,0,scale,variant);
+ }
+ ctx.restore();
+}
+function forestObjects(){
+ const lab=window.WUBBY_GRAPHICS_LAB;
+ const tiles=[];
+ let trees=0,forestTiles=0;
+ for(let r=0;r<N;r++)for(let c=0;c<N;c++)
+  if(board[r*N+c]==='pine'||board[r*N+c]==='birch')tiles.push([r,c,board[r*N+c]]);
+ // Painter's order for the isometric scene; background rows first.
+ tiles.sort((a,b)=>a[0]+a[1]-b[0]-b[1]||a[0]-b[0]);
+ for(const [r,c,kind] of tiles){
+  const centerPoint=center(r,c),seed=(r+13)*93+c*61,count=treesOnTile(r,c);
+  forestTiles++;trees+=count;
+  const placement=[];
+  for(let i=0;i<count;i++){
+   const slot=(i+Math.floor(hash(seed+19)*7))%treePositions.length;
+   const [bx,by]=treePositions[slot];
+   const x=bx+(hash(seed+i*13+3)-.5)*8;
+   const y=by+(hash(seed+i*13+5)-.5)*5;
+   const size=(kind==='birch'?.55:.56)+hash(seed+i*31+9)*.16;
+   placement.push({x,y,size,variant:Math.floor(hash(seed+i*17+23)*6)});
+  }
+  placement.sort((a,b)=>a.y-b.y);
+  for(const tree of placement){
+   drawForestTree(kind,tree.variant,centerPoint.x+tree.x,centerPoint.y+tree.y+8,tree.size,lab);
+  }
+ }
+ return {trees,forestTiles};
 }
 function render(){if(!cw)return;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,cw,ch);
  const bg=ctx.createLinearGradient(0,0,0,ch);bg.addColorStop(0,'#dcead4');bg.addColorStop(1,'#94b8a1');ctx.fillStyle=bg;ctx.fillRect(0,0,cw,ch);
@@ -145,12 +205,12 @@ function render(){if(!cw)return;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(
  for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(isWater(r,c)&&isolated(r,c)&&ready('pond')){
   const p=center(r,c);ctx.drawImage(images.pond,p.x-W/2,p.y-H/2,W,H);
  }
- const trees=forestObjects();
+ const forestStats=forestObjects();
  let edges=0,waterTiles=0;for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(isWater(r,c)){
   waterTiles++;for(const [dr,dc] of neighbor)if(!isWater(r+dr,c+dc))edges++;
  }
  if(grid){ctx.beginPath();for(let r=0;r<N;r++)for(let c=0;c<N;c++){const p=center(r,c);diamond(p.x,p.y)}ctx.lineWidth=.75/Math.max(.6,zoom);ctx.strokeStyle='rgba(13,45,30,.58)';ctx.stroke()}
- ctx.restore();$('status').textContent=board.filter(t=>t==='forest').length+' bosvakken · '+trees+' boomgroepen · '+waterTiles+' watervakken';$('zoom').textContent=Math.round(zoom*100)+'%'}
+ ctx.restore();$('status').textContent=forestStats.forestTiles+' bosvakken · '+forestStats.trees+' bomen · '+waterTiles+' watervakken';$('zoom').textContent=Math.round(zoom*100)+'%'}
 function resize(){const b=wrap.getBoundingClientRect();cw=Math.floor(b.width);ch=Math.floor(b.height);dpr=Math.min(devicePixelRatio||1,2);canvas.width=cw*dpr;canvas.height=ch*dpr;render()}
 function hit(clientX,clientY){const b=canvas.getBoundingClientRect(),xx=(clientX-b.left-cw/2-panX)/zoom,yy=(clientY-b.top-ch/2+(N-1)*H/2*zoom-panY)/zoom;
  const c=(xx/(W/2)+yy/(H/2))/2,r=(yy/(H/2)-xx/(W/2))/2,rr=Math.round(r),cc=Math.round(c);
