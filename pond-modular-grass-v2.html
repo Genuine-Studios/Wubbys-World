@@ -56,12 +56,15 @@ function buildPondLayer(){
   const k=y*tw+x;if(!dist[k])continue;
   dist[k]=Math.min(dist[k],dist[k+1]+1,dist[k+tw]+1,dist[k+tw-1]+1.414,dist[k+tw+1]+1.414);
  }
- function mat(name,xShift,yShift){const c=document.createElement('canvas');c.width=tw;c.height=th;const q=c.getContext('2d');
+ function mat(name,xShift,yShift,scale=1){const c=document.createElement('canvas');c.width=tw;c.height=th;const q=c.getContext('2d');
   const im=images[name];if(!ready(name))return q.getImageData(0,0,tw,th).data;
-  for(let y=yShift-im.naturalHeight;y<th;y+=im.naturalHeight)for(let x=xShift-im.naturalWidth;x<tw;x+=im.naturalWidth)q.drawImage(im,x,y);
+  // Scale illustrated water details, never the 112x57 grid or shoreline geometry.
+  const tileW=Math.max(1,Math.round(im.naturalWidth*scale)),tileH=Math.max(1,Math.round(im.naturalHeight*scale));
+  const startX=((xShift%tileW)+tileW)%tileW-tileW,startY=((yShift%tileH)+tileH)%tileH-tileH;
+  for(let y=startY;y<th;y+=tileH)for(let x=startX;x<tw;x+=tileW)q.drawImage(im,x,y,tileW,tileH);
   return q.getImageData(0,0,tw,th).data;
  }
- const water=mat('water',143,74),bank=mat('bank',88,121);
+ const water=mat('water',143,74,.20),bank=mat('bank',88,121);
  const target=document.createElement('canvas');target.width=tw;target.height=th;const o=target.getContext('2d');
  const im=o.createImageData(tw,th),pix=im.data;
  function smooth(a,b,v){const t=Math.max(0,Math.min(1,(v-a)/(b-a)));return t*t*(3-2*t)}
@@ -71,7 +74,16 @@ function buildPondLayer(){
   const waterAlpha=smooth(width-1.8,width+2.3,d);
   const bankAlpha=smooth(.3,3.2,d)*(1-waterAlpha);
   const a=waterAlpha+bankAlpha;if(a<.004)continue;
-  const v=k*4;for(let ch=0;ch<3;ch++)pix[v+ch]=Math.round((water[v+ch]*waterAlpha+bank[v+ch]*bankAlpha)/a);
+  const v=k*4;
+  // Give dark open water a clearer blue tone; keep brighter green lilies intact.
+  const brightness=(water[v]+water[v+1]+water[v+2])/3;
+  const aqua=.53*Math.max(0,Math.min(1,(120-brightness)/80));
+  const waterRed=water[v]*(1-aqua)+25*aqua;
+  const waterGreen=water[v+1]*(1-aqua)+92*aqua;
+  const waterBlue=water[v+2]*(1-aqua)+153*aqua;
+  pix[v]=Math.round((waterRed*waterAlpha+bank[v]*bankAlpha)/a);
+  pix[v+1]=Math.round((waterGreen*waterAlpha+bank[v+1]*bankAlpha)/a);
+  pix[v+2]=Math.round((waterBlue*waterAlpha+bank[v+2]*bankAlpha)/a);
   pix[v+3]=Math.round(a*255);
  }
  o.putImageData(im,0,0);
