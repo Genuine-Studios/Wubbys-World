@@ -11,7 +11,7 @@
 <footer><strong>Losse, niet-opgeslagen bosproef; het bestaande spel blijft intact.</strong> Gras en bosgrond gebruiken de vastgelegde individuele 112 × 57-ruitmethode. Water en oevers blijven van de goedgekeurde vijverstudie. Dennen- en berkenbostegels zijn afzonderlijke soorten met ieder 2–7 bomen. De bestaande bosgrondillustratie wordt voorlopig voor beide gebruikt; de eerste boomillustraties zijn geschilderde, transparante sprites die we verder kunnen verfijnen.</footer>
 <script src="wubby-graphics-lab.js?v=1"></script>
 <script src="wubby-forest-study-v2.js?v=1"></script>
-<script src="forest-painted-tree-art.js?v=1"></script>
+<script src="forest-painted-tree-art.js?v=2"></script>
 <script>
 (()=>{'use strict';
 const W=112,H=57,N=9,canvas=document.getElementById('stage'),wrap=document.getElementById('viewport'),ctx=canvas.getContext('2d');
@@ -67,9 +67,9 @@ function buildPondLayer(){
  // Smooth the mathematical union only: this changes the shoreline mask,
  // never the underlying 112x57 terrain geometry.
  const soften=document.createElement('canvas');soften.width=tw;soften.height=th;
- const sm=soften.getContext('2d',{willReadFrequently:true});sm.filter='blur(12px)';sm.drawImage(mask,0,0);sm.filter='none';
+ const sm=soften.getContext('2d',{willReadFrequently:true});sm.filter='blur(4px)';sm.drawImage(mask,0,0);sm.filter='none';
  const maskPixels=sm.getImageData(0,0,tw,th).data,dist=new Float32Array(tw*th);
- for(let i=0;i<dist.length;i++)dist[i]=maskPixels[i*4+3]>145?10000:0;
+ for(let i=0;i<dist.length;i++)dist[i]=maskPixels[i*4+3]>128?10000:0;
  for(let y=1;y<th-1;y++)for(let x=1;x<tw-1;x++){
   const k=y*tw+x;if(!dist[k])continue;
   dist[k]=Math.min(dist[k],dist[k-1]+1,dist[k-tw]+1,dist[k-tw-1]+1.414,dist[k-tw+1]+1.414);
@@ -92,9 +92,9 @@ function buildPondLayer(){
  function smooth(a,b,v){const t=Math.max(0,Math.min(1,(v-a)/(b-a)));return t*t*(3-2*t)}
  for(let y=0;y<th;y++)for(let x=0;x<tw;x++){
   const k=y*tw+x,d=dist[k];if(d<.1)continue;
-  const width=8.7+2.4*Math.sin(x*.105+y*.036)+1.5*Math.sin(x*.045-y*.165)+1.6*Math.sin((x+y)*.073);
-  const waterAlpha=smooth(width-1.8,width+2.3,d);
-  const bankAlpha=smooth(.3,3.2,d)*(1-waterAlpha);
+  const width=7.6+1.05*Math.sin(x*.092+y*.046)+.72*Math.sin(x*.043-y*.137)+.46*Math.sin((x+y)*.109);
+  const waterAlpha=smooth(width-.48,width+.42,d);
+  const bankAlpha=smooth(.24,1.35,d)*(1-waterAlpha);
   const a=waterAlpha+bankAlpha;if(a<.004)continue;
   const v=k*4;
   // Give dark open water a clearer blue tone; keep brighter green lilies intact.
@@ -103,9 +103,14 @@ function buildPondLayer(){
   const waterRed=water[v]*(1-aqua)+25*aqua;
   const waterGreen=water[v+1]*(1-aqua)+92*aqua;
   const waterBlue=water[v+2]*(1-aqua)+153*aqua;
-  pix[v]=Math.round((waterRed*waterAlpha+bank[v]*bankAlpha)/a);
-  pix[v+1]=Math.round((waterGreen*waterAlpha+bank[v+1]*bankAlpha)/a);
-  pix[v+2]=Math.round((waterBlue*waterAlpha+bank[v+2]*bankAlpha)/a);
+  // Narrow, textured, darker wet edge instead of the old broad fuzzy blend.
+  const wet=Math.max(0,1-Math.abs(d-(width+.48))/1.9);
+  const bankDark=Math.max(0,1-Math.abs(d-(width-.65))/2.0);
+  const waterTone=1-.17*wet;
+  const bankTone=1-.13*bankDark;
+  pix[v]=Math.round((waterRed*waterTone*waterAlpha+bank[v]*bankTone*bankAlpha)/a);
+  pix[v+1]=Math.round((waterGreen*waterTone*waterAlpha+bank[v+1]*bankTone*bankAlpha)/a);
+  pix[v+2]=Math.round((waterBlue*waterTone*waterAlpha+bank[v+2]*bankTone*bankAlpha)/a);
   pix[v+3]=Math.round(a*255);
  }
  o.putImageData(im,0,0);
