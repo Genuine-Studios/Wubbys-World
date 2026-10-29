@@ -6,11 +6,12 @@
 <button data-preset="clearing" class="on">🌲 Bos met open plek</button><button data-preset="grove">🌳 Bosrand</button><button data-preset="dense">🌲 Dicht bos</button></div>
 <div class="tools"><button data-brush="pine" class="on">🌲 Dennenbos</button><button data-brush="birch">🌳 Berkenbos</button><button data-brush="grass">🌱 Gras</button><button data-brush="water">💧 Water</button><button id="grid">Raster tonen</button><button id="minus">−</button><button id="plus">+</button><button id="reset">Herstel</button></div>
 <div class="tools"><span style="align-self:center;color:#cadfc8;font-size:12px;margin-right:5px">Bomen per bostegel:</span><button data-density="low">2–3</button><button data-density="medium" class="on">3–5</button><button data-density="high">5–7</button></div>
-<div class="sub">Tik op de kaart om terrein te veranderen, versleep om rond te kijken. Dennen en berken staan op afzonderlijke bostegels. Elke bostegel bevat meerdere bomen; de individuele boomillustraties zijn nog vormstudies.</div>
+<div class="sub">Tik op de kaart om terrein te veranderen, versleep om rond te kijken. Dennen en berken staan op afzonderlijke bostegels. Elke bostegel bevat meerdere bomen; de bomen komen nu uit vier geschilderde, losstaande illustraties.</div>
 <div id="viewport"><canvas id="stage" aria-label="Interactieve modulaire bos- en vijverproef"></canvas></div><div class="meta"><span id="status">Bosgrond · gras · vijvers</span><span id="zoom">100%</span></div></main>
-<footer><strong>Losse, niet-opgeslagen bosproef; het bestaande spel blijft intact.</strong> Gras en bosgrond gebruiken de vastgelegde individuele 112 × 57-ruitmethode. Water en oevers blijven van de goedgekeurde vijverstudie. Dennen- en berkenbostegels zijn afzonderlijke soorten met ieder 2–7 bomen. De bestaande bosgrondillustratie wordt voorlopig voor beide gebruikt; de boomillustraties zijn vervangbare studies.</footer>
+<footer><strong>Losse, niet-opgeslagen bosproef; het bestaande spel blijft intact.</strong> Gras en bosgrond gebruiken de vastgelegde individuele 112 × 57-ruitmethode. Water en oevers blijven van de goedgekeurde vijverstudie. Dennen- en berkenbostegels zijn afzonderlijke soorten met ieder 2–7 bomen. De bestaande bosgrondillustratie wordt voorlopig voor beide gebruikt; de eerste boomillustraties zijn geschilderde, transparante sprites die we verder kunnen verfijnen.</footer>
 <script src="wubby-graphics-lab.js?v=1"></script>
 <script src="wubby-forest-study-v2.js?v=1"></script>
+<script src="forest-painted-tree-art.js?v=1"></script>
 <script>
 (()=>{'use strict';
 const W=112,H=57,N=9,canvas=document.getElementById('stage'),wrap=document.getElementById('viewport'),ctx=canvas.getContext('2d');
@@ -156,6 +157,8 @@ function treesOnTile(r,c){
 }
 function drawForestTree(kind,variant,x,y,scale,lab){
  ctx.save();ctx.translate(x,y);
+ const painted=window.WUBBY_PAINTED_FOREST_ART;
+ if(painted&&painted.draw(ctx,kind,variant,0,0,scale)){ctx.restore();return;}
  if(kind==='birch'){
   const asset=birchSprite(variant),w=80*scale,h=108*scale;
   ctx.drawImage(asset,-w/2,-h,w,h);
@@ -223,6 +226,8 @@ for(const b of document.querySelectorAll('[data-brush]'))b.onclick=()=>{brush=b.
 for(const b of document.querySelectorAll('[data-density]'))b.onclick=()=>{density=b.dataset.density;document.querySelectorAll('[data-density]').forEach(q=>q.classList.toggle('on',q===b));render()};
 $('grid').onclick=()=>{grid=!grid;$('grid').classList.toggle('on',grid);$('grid').textContent=grid?'✓ Raster':'Raster tonen';render()};
 function setZoom(v){zoom=Math.max(.38,Math.min(2.8,v));render()}$('minus').onclick=()=>setZoom(zoom/1.23);$('plus').onclick=()=>setZoom(zoom*1.23);$('reset').onclick=()=>{panX=0;panY=0;density='medium';document.querySelectorAll('[data-density]').forEach(q=>q.classList.toggle('on',q.dataset.density==='medium'));setPreset('clearing');setZoom(innerWidth<600?.88:1.64)};
-canvas.addEventListener('wheel',e=>{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.15:1/1.15))},{passive:false});new ResizeObserver(resize).observe(wrap);setPreset('clearing');resize();
+canvas.addEventListener('wheel',e=>{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.15:1/1.15))},{passive:false});
+window.addEventListener('wubby-painted-forest-ready',render);
+new ResizeObserver(resize).observe(wrap);setPreset('clearing');resize();
 })();
 </script></body></html>
