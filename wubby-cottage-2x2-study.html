@@ -3,7 +3,7 @@
 *{box-sizing:border-box}html,body{margin:0;background:#172524;color:#edecda;font-family:system-ui,-apple-system,sans-serif}body{min-height:100vh}header{padding:16px 18px 9px;max-width:940px;margin:auto}h1{margin:0;font-weight:730;letter-spacing:-.03em;font-size:clamp(19px,4.4vw,26px)}header p{margin:4px 0 8px;font-size:13px;color:#b8cabc;line-height:1.5}nav{display:flex;flex-wrap:wrap;gap:7px;margin:0 12px 11px;max-width:950px}button{cursor:pointer;touch-action:manipulation;background:#294138;color:#e7efd9;border:1px solid #59775d;border-radius:9px;padding:10px 12px;font-size:13px;font-weight:700}button.on{background:#abd18a;color:#1e3428;border-color:#c6ebb0}button:focus-visible{outline:3px solid #fff2a8}button:nth-child(4){margin-left:auto}#boardWrap{position:relative;overflow:hidden;touch-action:none;background:radial-gradient(circle at 48% 36%,#d5e7c0 0%,#9ab99b 70%,#749e91 100%);border-radius:14px;border:1px solid #789685;margin:0 10px;max-width:950px;height:min(71vh,690px);min-height:410px}canvas{display:block;width:100%;height:100%;touch-action:none}#info{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;margin:9px 14px 6px;max-width:940px;color:#bcd0bd;font-size:12px;line-height:1.5}footer{max-width:940px;margin:10px 15px 26px;color:#9eb2a5;font-size:12px;line-height:1.55}footer strong{color:#e3f2ce}.note{font-size:11px;padding:7px 12px;margin-top:7px;color:#bfcbb7;background:#192b25;border-radius:8px}.select{display:flex;flex-wrap:wrap;gap:5px;margin:0 12px 10px;max-width:950px;overflow-x:visible}.select button{flex:none;font-size:12px;padding:9px 11px}.select button:nth-child(4){margin-left:0}#zoom{font-size:12px;opacity:.85;margin-left:auto}#status{color:#e4eead}
 @media(min-width:980px){nav,.select,#boardWrap,#info,footer{margin-left:auto;margin-right:auto}}
 </style></head><body>
-<header><h1>Wubby's World · Huisje 2×2</h1><p>Het nieuwe geïllustreerde huis staat als <strong>één transparant object</strong> bovenop vier gewone isometrische vakjes. Geen extra getekende tegelrand.</p></header>
+<header><h1>Wubby's World · Huisje 2×2</h1><p>Het huis staat als één illustratie met de voeten binnen vier vakken. Het volledige raster blijft ongewijzigd.</p></header>
 <nav><button id="grid">Toon raster</button><button id="edges" class="on">✓ Huis 2×2</button><button id="reset">Herstel voorbeeld</button><button id="zoomOut" aria-label="Zoom out">−</button><button id="zoomIn" aria-label="Zoom in">+</button></nav>
 <div class="select"><button data-brush="path" class="on">🪨 Pad</button><button data-brush="house">🏡 Verplaats huis</button><button data-brush="forest">🌲 Bos</button><button data-brush="meadow">🌼 Bloemen</button><button data-brush="grass">🌱 Gras</button><button data-brush="water">💧 Vijver</button></div>
 <div id="boardWrap"><canvas id="stage" aria-label="Editable illustrated isometric terrain map"></canvas></div>
@@ -80,14 +80,21 @@ function props(t,r,c,x,y){
 }
 function drawHomeGround(){
  const {x,y}=C(house.r,house.c),left={x:x-W,y:y+H/2},bottom={x,y:y+H*1.5};
- // A short threshold-to-path connector stays inside the original 2×2 footprint.
- const a={x:x-W/4,y:y+H*1.25},b={x:x-16,y:y+H*.94};
- ctx.save();ctx.lineCap='round';
- ctx.lineWidth=17;ctx.strokeStyle='#9b855c';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.quadraticCurveTo(x-23,y+H*1.12,b.x,b.y);ctx.stroke();
- ctx.lineWidth=13;ctx.strokeStyle='#dfc7a0';ctx.stroke();
- for(const [xx,yy,tilt] of [[-26,69,0],[-23,64,1],[-20,58,-1]]){
-  ctx.save();ctx.translate(x+xx,y+yy);ctx.rotate(tilt*.07);
-  ctx.fillStyle='#e5d4ab';ctx.strokeStyle='#af9773';ctx.lineWidth=.8;ctx.beginPath();ctx.ellipse(0,0,7,3.8,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore();
+ // The road and threshold meet at the exact shared 112x57 diamond edge.
+ const gate={x:x-W/4,y:y+H*1.25};
+ const door={x:x-16,y:y+H*.73};
+ ctx.save();
+ // Subtle contact shadow contained within the 2x2 site.
+ const shade=ctx.createRadialGradient(x,y+H*.3,3,x,y+H*.3,W*.67);
+ shade.addColorStop(0,'#405c3942');shade.addColorStop(1,'#405c3900');
+ ctx.fillStyle=shade;ctx.beginPath();ctx.ellipse(x,y+H*.34,W*.68,H*.57,0,0,Math.PI*2);ctx.fill();
+ ctx.lineCap='butt';ctx.beginPath();ctx.moveTo(gate.x,gate.y);ctx.lineTo(door.x,door.y);
+ ctx.lineWidth=15;ctx.strokeStyle='#927b54';ctx.stroke();
+ ctx.lineWidth=12;ctx.strokeStyle='#ddc69d';ctx.stroke();
+ for(const [xx,yy] of [[-28,67],[-25,59],[-21,51],[-18,45]]){
+  ctx.save();ctx.translate(x+xx,y+yy);ctx.rotate(-.06);
+  ctx.fillStyle='#e5d3ad';ctx.strokeStyle='#a98d66';ctx.lineWidth=.75;
+  ctx.beginPath();ctx.ellipse(0,0,6,2.4,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore();
  }
  ctx.restore();
 }
@@ -95,10 +102,12 @@ function drawHome(){
  const {x,y}=C(house.r,house.c);
  const im=images.cottage;
  if(!active(im))return;
- // Exact 2×2 footprint width: 2 x 112 = 224 game pixels.
- // Full alpha image, no masking or cropping. Its foot reaches the southern site edge.
- const w=W*2,h=w*im.naturalHeight/im.naturalWidth;
- ctx.drawImage(im,x-w/2,y+H*1.5-h,w,h);
+ // The diamond is 224 wide, but its width is not the size of the sprite.
+ // Contact points of the cottage garden must stay inside the 2x2 footprint.
+ // Roof and chimney may project above it, as with other tall game objects.
+ const w=W*1.64,h=w*im.naturalHeight/im.naturalWidth;
+ const yFoot=y+H*1.07;
+ ctx.drawImage(im,x-w/2,yFoot-h,w,h);
 }
 function drawHouseOutline(){
  const {x,y}=C(house.r,house.c);
@@ -141,8 +150,8 @@ let down=null;canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture
 canvas.addEventListener('pointermove',e=>{if(!down)return;const dx=e.clientX-down.x,dy=e.clientY-down.y;if(Math.abs(dx)+Math.abs(dy)>7)down.moved=true;if(down.moved){panX=down.px+dx;panY=down.py+dy;render();}});
 canvas.addEventListener('pointerup',e=>{if(!down)return;if(!down.moved){const h=hit(e);if(h){
  if(brush==='house'){
-  if(h.r+1>=N||h.c+1>=N){document.getElementById('status').textContent='Kies een vak met ruimte voor 2×2.';}
-  else{house={r:h.r,c:h.c};for(let r=h.r;r<h.r+2;r++)for(let c=h.c;c<h.c+2;c++)board[r*N+c]='grass';document.getElementById('status').textContent='Huis verplaatst. Vier vakken bezet; het pad sluit rechtsonder aan.';}
+  if(h.r+2>=N||h.c+1>=N){document.getElementById('status').textContent='Kies een vak met ruimte voor 2×2 en een pad vóór de deur.';}
+  else{house={r:h.r,c:h.c};for(let r=h.r;r<h.r+2;r++)for(let c=h.c;c<h.c+2;c++)board[r*N+c]='grass';document.getElementById('status').textContent='Huis verplaatst. De voet van het huis blijft binnen vier vakken.';}
  }else if(homeCell(h.r,h.c)){document.getElementById('status').textContent='Dit vak behoort tot de 2×2 grond van het huis.';}
  else{board[h.r*N+h.c]=brush;document.getElementById('status').textContent='Vak '+(h.r+1)+','+(h.c+1)+' bijgewerkt.';}
  render();}}down=null;});
