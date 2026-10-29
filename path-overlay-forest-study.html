@@ -179,58 +179,78 @@ function drawForestTree(kind,variant,x,y,scale,lab){
  ctx.restore();
 }
 
-/* Test-only illustrated path overlays. Existing terrain and forest assets remain untouched.
-   The painted bank asset provides material detail; code only defines the path silhouette. */
-const routePorts=[[W/4,-H/4],[W/4,H/4],[-W/4,H/4],[-W/4,-H/4]];
+/* Seamless painted path network. The terrain, ponds, and forest renderers are
+   deliberately unchanged. All adjacent path cells now share ONE vector path:
+   no per-diamond clipping, duplicated edges, or individually painted joints. */
 function hasPath(r,c){return r>=0&&c>=0&&r<N&&c<N&&paths.has(r*N+c)&&!isWater(r,c)}
-function routeShape(r,c){
- const dirs=neighbor.map(([dr,dc],i)=>hasPath(r+dr,c+dc)?i:-1).filter(i=>i>=0);
- const wig=(hash((r+23)*97+c*53)-.5)*3;
- ctx.beginPath();
- if(dirs.length===0){ctx.moveTo(-16,7);ctx.quadraticCurveTo(wig,-3,15,-7);}
- else if(dirs.length===1){
-  const p=routePorts[dirs[0]];ctx.moveTo(0,0);ctx.quadraticCurveTo(wig*.5,-wig*.5,p[0],p[1]);
- }else if(dirs.length===2){
-  const p=routePorts[dirs[0]],q=routePorts[dirs[1]];
-  ctx.moveTo(p[0],p[1]);ctx.quadraticCurveTo(wig,0,q[0],q[1]);
- }else for(const i of dirs){
-  const p=routePorts[i];ctx.moveTo(0,0);ctx.quadraticCurveTo(wig*.5,0,p[0],p[1]);
- }
- return dirs;
-}
 function drawRoutes(){
- let count=0;
+ const segments=[];
+ const active=[];
  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
-  if(!hasPath(r,c))continue;count++;
-  const {x,y}=center(r,c),seed=97*r+67*c;
-  ctx.save();ctx.beginPath();diamond(x,y);ctx.clip();ctx.translate(x,y);
-  const dirs=routeShape(r,c);
-  ctx.lineJoin='round';ctx.lineCap='butt';
-  ctx.strokeStyle='#715b40';ctx.lineWidth=18.5;ctx.stroke();
-  ctx.strokeStyle='#9d815a';ctx.lineWidth=16.2;ctx.stroke();
-  ctx.strokeStyle='#d2b184';ctx.lineWidth=13.6;ctx.stroke();
-  // Painterly material from the existing bank illustration, not a new platform tile.
-  if(ready('bank')){
-   ctx.save();ctx.globalAlpha=.34;ctx.strokeStyle=pattern('bank');
-   ctx.lineWidth=13.5;ctx.stroke();ctx.restore();
+  if(!hasPath(r,c))continue;
+  const p=center(r,c);
+  const dirs=neighbor.map(([dr,dc],i)=>hasPath(r+dr,c+dc)?i:-1).filter(i=>i>=0);
+  active.push({r,c,x:p.x,y:p.y,dirs,seed:97*r+67*c});
+  // Each shared connection is drawn once, from tile centre to tile centre.
+  // North and east cover all unique adjacency pairs on the isometric grid.
+  for(const i of [0,1]){
+   if(!dirs.includes(i))continue;
+   const [dr,dc]=neighbor[i],q=center(r+dr,c+dc);
+   const dx=q.x-p.x,dy=q.y-p.y,len=Math.hypot(dx,dy);
+   const wiggle=(hash((r+17)*83+(c+9)*41+i*19)-.5)*3;
+   const nx=-dy/len*wiggle,ny=dx/len*wiggle;
+   segments.push({from:p,to:q,dx,dy,nx,ny});
   }
-  ctx.save();ctx.globalAlpha=.15;ctx.strokeStyle='#f9e0a9';ctx.lineWidth=8.5;ctx.stroke();ctx.restore();
-  // Small deterministic stones; no random jitter between renders.
+ }
+ if(!active.length)return 0;
+ ctx.save();
+ ctx.lineCap='round';ctx.lineJoin='round';
+ ctx.beginPath();
+ for(const {from,to,dx,dy,nx,ny} of segments){
+  // Continuous cubic across the former tile boundary: same paint,
+  // width, contour, and material on both sides of the seam.
+  ctx.moveTo(from.x,from.y);
+  ctx.bezierCurveTo(from.x+dx*.32+nx,from.y+dy*.32+ny,
+   from.x+dx*.68+nx,from.y+dy*.68+ny,to.x,to.y);
+ }
+ for(const p of active)if(p.dirs.length===0){
+  ctx.moveTo(p.x-16,p.y+7);
+  ctx.quadraticCurveTo(p.x,p.y-3,p.x+16,p.y-7);
+ }
+ // Apply each painted layer once to the complete network. Stroke layering
+ // across individual tiles previously caused visible strips at junctions.
+ ctx.strokeStyle='#715b40';ctx.lineWidth=18.5;ctx.stroke();
+ ctx.strokeStyle='#9d815a';ctx.lineWidth=16.2;ctx.stroke();
+ ctx.strokeStyle='#d2b184';ctx.lineWidth=13.6;ctx.stroke();
+ if(ready('bank')){
+  ctx.save();ctx.globalAlpha=.34;
+  ctx.strokeStyle=pattern('bank');ctx.lineWidth=13.5;ctx.stroke();
+  ctx.restore();
+ }
+ ctx.save();ctx.globalAlpha=.15;
+ ctx.strokeStyle='#f9e0a9';ctx.lineWidth=8.5;ctx.stroke();ctx.restore();
+ // Tiny deterministic gravel flecks are painted only over the path area.
+ // Their positions do not regenerate or jump when the user pans or zooms.
+ for(const p of active){
+  ctx.save();ctx.translate(p.x,p.y);
   for(let i=0;i<35;i++){
-   const u=hash(seed*4+i*13),v=hash(seed*3+i*37),xx=(u-.5)*W*.55,yy=(v-.5)*H*.57;
+   const xx=(hash(p.seed*4+i*13)-.5)*W*.55;
+   const yy=(hash(p.seed*3+i*37)-.5)*H*.57;
    if(Math.abs(xx)/(W/2)+Math.abs(yy)/(H/2)>.88)continue;
-   const dist=dirs.length?Math.min(...dirs.map(k=>{
-    const [px,py]=routePorts[k],d=px*px+py*py;
-    const t=Math.max(0,Math.min(1,(xx*px+yy*py)/d));
-    return Math.hypot(xx-t*px,yy-t*py);
+   const nearest=p.dirs.length?Math.min(...p.dirs.map(k=>{
+    const [dr,dc]=neighbor[k],other=center(p.r+dr,p.c+dc);
+    const ax=other.x-p.x,ay=other.y-p.y;
+    const t=Math.max(0,Math.min(1,(xx*ax+yy*ay)/(ax*ax+ay*ay)));
+    return Math.hypot(xx-t*ax,yy-t*ay);
    })):Math.abs(yy+xx*.42);
-   if(dist>5.6)continue;
+   if(nearest>5.1)continue;
    ctx.fillStyle=i%3===0?'rgba(82,64,48,.5)':i%3===1?'rgba(252,232,195,.7)':'rgba(173,147,112,.75)';
-   ctx.beginPath();ctx.ellipse(xx,yy,.4+hash(seed+i+4)*1.2,.3+hash(seed+i+9)*.55,hash(i*43),0,Math.PI*2);ctx.fill();
+   ctx.beginPath();ctx.ellipse(xx,yy,.4+hash(p.seed+i+4)*1.2,.3+hash(p.seed+i+9)*.55,hash(i*43),0,Math.PI*2);ctx.fill();
   }
   ctx.restore();
  }
- return count;
+ ctx.restore();
+ return active.length;
 }
 
 function forestObjects(){
