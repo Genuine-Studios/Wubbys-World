@@ -11,6 +11,14 @@ Voor **alle** nieuwe ondergrondsoorten (gras, bosgrond, zand, rotsgrond, enzovoo
 - **Goedgekeurde stand:** `Per tegel` AAN en `Verschillende uitsneden` AAN.
 - De gebruiker beoordeelde dit als: “That works perfectly and looks good.”
 
+## VERPLICHTE BRONAFBEELDING: dezelfde vorm als de grastegel
+- De bronillustratie moet **eerst** worden gemaakt als **één losse isometrische ruit**, zoals de originele, goedgekeurde grasillustratie. De referentie is de door de gebruiker getoonde grastegel: **1758 × 895 pixels, RGBA met transparantie buiten de ruit**, zonder meegetekende dikte, platform of achtergrond. 
+- **Exact dezelfde isometrische kijkhoek, afmeting, verhoudingen, zachte schilderstijl en detailschaal.** Alleen het materiaal verandert (gras wordt mos/bosstrooisel, later zand/rots, enz.).
+- **GEEN** top-down vierkante graphic als het artistieke bronbeeld. **GEEN** atlascollage of zestien losse voorbeeldruitjes als bron. Dit is herhaaldelijk expliciet afgewezen.
+- Het goedgekeurde raster **knipt vervolgens uitsneden uit het geschilderde binnenvlak van die ruit**. Eventuele technische voorbereiding naar een gevuld textuurbeeld is uitsluitend een omzetting van datzelfde nieuwe bronbeeld en **geen andere renderer of andere uitsnedeformule**.
+- De renderer blijft letterlijk de goedgekeurde `grass-individual-tiles.html`-methode, ook voor bosgrond en latere ondergronden.
+- Nieuwe bosgrondbron volgens die afspraak: de nieuw geïllustreerde mos-/blad-/naaldruittegel van 29 oktober 2026. Playable vergelijking: `forest-ground-tile-test.html`.
+
 ## Werkwijze (exact als grastegels)
 1. Maak **één verse, aantrekkelijke, gedetailleerde geschilderde ondergrondafbeelding** met voldoende kleine details die op werkelijke spelgrootte passen. Gebruik het **goedgekeurde grasbeeld als visuele en productie-referentie**: isometrisch passend, geen UI, collage, grid of atlas. Bij de terreinlaag is het **de textuur binnen de bron** die wordt hergebruikt, **niet de geschilderde buitenrand van de bronruit**.
 2. **Iedere kaartpositie krijgt zijn eigen uitsnede van datzelfde materiaalbeeld.** Gebruik het **bestaande 112 × 57 raster** en de bestaande `tileCrop` en `drawIndividualTile`-aanpak. Leg geen doorlopende wereldwijde materiaalafbeelding onder alle verschillende terreinen.
