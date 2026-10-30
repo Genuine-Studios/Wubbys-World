@@ -1,4 +1,4 @@
-/* Wubby's World: bilingual, contextual dialogue bank. Keep this separate from terrain art. */
+/* Wozli's World: bilingual, contextual dialogue bank. Keep this separate from terrain art. */
 window.WUBBY_DIALOGUE_PACK={
   "first": {
     "clover": [
@@ -863,8 +863,8 @@ window.WUBBY_DIALOGUE_PACK={
         "Hallo? Hallo? ... Niemand thuis."
       ],
       [
-        "Maybe another Wubby lives in this hollow tree.",
-        "Misschien woont hier nog een andere Wubby."
+        "Maybe another Wozli lives in this hollow tree.",
+        "Misschien woont hier nog een andere Wozli."
       ],
       [
         "The hollow oak looks bigger on the inside.",
@@ -883,8 +883,8 @@ window.WUBBY_DIALOGUE_PACK={
         "Een klein raampje zou hier mooi staan."
       ],
       [
-        "Maybe this is another Wubby's house.",
-        "Misschien is dit wel het huis van een andere Wubby."
+        "Maybe this is another Wozli's house.",
+        "Misschien is dit wel het huis van een andere Wozli."
       ]
     ],
     "apiary": [
@@ -919,8 +919,8 @@ window.WUBBY_DIALOGUE_PACK={
         "Wie hield hier vroeger de wacht?"
       ],
       [
-        "Maybe they watched for wandering Wubbies.",
-        "Misschien zochten ze naar verdwaalde Wubby's."
+        "Maybe they watched for wandering Wozlis.",
+        "Misschien zochten ze naar verdwaalde Wozli's."
       ],
       [
         "If I had a flag, I'd wave it from here.",
@@ -1420,8 +1420,8 @@ window.WUBBY_DIALOGUE_PACK={
     {
       "day": 7,
       "line": [
-        "What if I am the only Wubby in the world?",
-        "Wat als ik de enige Wubby ter wereld ben?"
+        "What if I am the only Wozli in the world?",
+        "Wat als ik de enige Wozli ter wereld ben?"
       ]
     },
     {
@@ -1511,8 +1511,8 @@ window.WUBBY_DIALOGUE_PACK={
     {
       "day": 20,
       "line": [
-        "What if I'm the only Wubby in the whole world?",
-        "Wat als ik de enige Wubby op de hele wereld ben?"
+        "What if I'm the only Wozli in the whole world?",
+        "Wat als ik de enige Wozli op de hele wereld ben?"
       ]
     },
     {
