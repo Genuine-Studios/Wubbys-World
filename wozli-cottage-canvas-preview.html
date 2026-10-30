@@ -1568,11 +1568,31 @@ function storyCottage(){
    E(x,y,rx,2.5,'#98886d78');E(x-1,y-1,rx-1,1.55,'#f2e3c7');
  }
  // Lower stone ledge; two genuinely joined, differently lit isometric walls.
+ // Rear building mass: continuous OPAQUE plaster behind the two visible facades.
+ // Roof eaves cover the tops, but cannot reveal the transparent map beneath.
+ P([[-35,-43],[0,-62],[35,-43],[35,-7],[0,12],[-35,-7]],'#e4d3ad','#9b7b5b',1.1);
+ P([[-35,-43],[0,-62],[0,-26],[-35,-7]],'#f0ddbb');
+ P([[0,-62],[35,-43],[35,-7],[0,-26]],'#d7c5a5');
+ // Closed gable at the far end of the ridge.
+ P([[-35,-43],[-20,-77],[0,-62]],'#f1dfbc','#ab8968',1);
+ S([[-34,-43],[-20,-76],[0,-62]],'#a78051',1.6);
  P([[-35,-8],[0,12],[35,-8],[35,-3],[0,18],[-35,-2]],'#b69c7b','#876c54',.8);
  P([[-35,-41],[0,-22],[0,12],[-35,-7]],'#fff0cf','#aa855f',1.15);
  P([[0,-22],[35,-41],[35,-7],[0,12]],'#e8d4ad','#9b7856',1.15);
  P([[-32,-38],[-3,-22],[-3,7],[-32,-8]],'#fff3dc');
  P([[3,-21],[32,-38],[32,-9],[3,7]],'#f1dfbe');
+ // The front-facing triangular gable joins BOTH roof slopes.
+ // Its omission used to leave a clear hole through the house below the roof.
+ P([[0,-22],[20,-56],[35,-41]],'#f7e8c7','#9a7650',1.4);
+ P([[3,-23],[20,-52],[32,-41]],'#fff0d1');
+ // Timber beams close off the attic and follow the pitched roof.
+ S([[0,-22],[20,-56],[35,-41]],'#a97a4c',2.25);
+ S([[3,-24],[34,-41]],'#bf9564',1.25);
+ // Small circular attic window with dark glass and a warm reflected glint.
+ E(21.5,-42.6,5,5.3,'#916844');
+ E(21.5,-42.6,3.4,3.7,'#6b9ca0');
+ E(20.5,-44,1.45,1.6,'#d4f5db');
+ S([[21.5,-46],[21.5,-39]],'#b88b58',.9);
  // Solid timber corners, sill and joined frame.
  S([[-35,-41],[-35,-7]],'#91613f',2.9);
  S([[0,-22],[0,12]],'#a67448',2.9);
@@ -1658,6 +1678,8 @@ function storyCottage(){
  S([[-43,-43],[2,-18],[43,-43]],'#6b5438',3.1);
  S([[-43,-44],[-20,-77],[20,-56],[43,-44]],'#a67a4c',2.4);
  S([[-20,-77],[0,-65]],'#bfdc93',1.65);
+ // The far eave conceals the rear wall seam and closes the roof silhouette.
+ S([[0,-65],[43,-43]],'#6a5239',2.65);
  S([[-40,-45],[-19,-76]],'#e5c48c',1.1);
  // Discrete flowering moss attached to roof instead of hovering separately.
  for(const [x,y] of [[-30,-48],[-17,-54],[-3,-35],[13,-36],[29,-47]]){
